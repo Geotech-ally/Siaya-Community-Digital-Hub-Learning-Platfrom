@@ -1,0 +1,411 @@
+// ==========================================================
+// Siaya Community Digital Hub Learning Platform
+// Prisma Schema (PostgreSQL)
+// ==========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------
+// ENUMS
+// ----------------------------------------------------------
+
+enum Role {
+  ADMIN
+  TRAINER
+  LEARNER
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Department {
+  BASIC_ICT_SKILLS
+  DESIGN_COURSES
+  MARKETING_COURSES
+  COMPUTER_SCIENCE
+  DATA_SCIENCE_AND_AI
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum SubmissionStatus {
+  PENDING
+  GRADED
+  LATE
+}
+
+enum NotificationType {
+  ANNOUNCEMENT
+  GRADE
+  ENROLLMENT
+  SYSTEM
+  CERTIFICATE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  ROLE_CHANGE
+  ACTIVATE
+  DEACTIVATE
+}
+
+// ----------------------------------------------------------
+// USER
+// ----------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role     @default(LEARNER)
+  isActive     Boolean  @default(true)
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Trainer/Admin relations
+  coursesCreated  Course[]        @relation("CourseCreatedBy")
+  trainerCourses  CourseTrainer[]
+
+  // Learner relations
+  enrollments     Enrollment[]
+  submissions     QuizSubmission[]
+  assignmentSubs  AssignmentSubmission[]
+  progressRecords Progress[]
+  certificates    Certificate[]
+  notifications   Notification[]
+
+  // Audit / creation trail
+  createdByAdminId String?
+  createdByAdmin   User?   @relation("AdminCreatesTrainer", fields: [createdByAdminId], references: [id])
+  trainersCreated  User[]  @relation("AdminCreatesTrainer")
+
+  auditLogs AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+// ----------------------------------------------------------
+// CATEGORY
+// ----------------------------------------------------------
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  courses   Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+// ----------------------------------------------------------
+// COURSE
+// ----------------------------------------------------------
+
+model Course {
+  id          String       @id @default(uuid())
+  title       String
+  slug        String       @unique
+  description String
+  department  Department
+  status      CourseStatus @default(DRAFT)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("CourseCreatedBy", fields: [createdById], references: [id])
+
+  trainers    CourseTrainer[]
+  modules     Module[]
+  enrollments Enrollment[]
+  quizzes     Quiz[]
+  assignments Assignment[]
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([department])
+  @@map("courses")
+}
+
+// Join table: trainers assigned to a course (by Admin)
+model CourseTrainer {
+  id        String   @id @default(uuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  trainerId String
+  trainer   User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@unique([courseId, trainerId])
+  @@index([trainerId])
+  @@map("course_trainers")
+}
+
+// ----------------------------------------------------------
+// MODULE & LESSON (structured content, no PDFs)
+// ----------------------------------------------------------
+
+model Module {
+  id        String   @id @default(uuid())
+  title     String
+  order     Int      @default(0)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   // structured rich-text / markdown content
+  videoUrl    String?  // Mux/S3 video link
+  order       Int      @default(0)
+  moduleId    String
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    Progress[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+// ----------------------------------------------------------
+// ENROLLMENT
+// ----------------------------------------------------------
+
+model Enrollment {
+  id        String           @id @default(uuid())
+  learnerId String
+  learner   User             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status    EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime        @default(now())
+  completedAt DateTime?
+
+  @@unique([learnerId, courseId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+// ----------------------------------------------------------
+// PROGRESS (per learner, per lesson)
+// ----------------------------------------------------------
+
+model Progress {
+  id          String   @id @default(uuid())
+  learnerId   String
+  learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([learnerId, lessonId])
+  @@index([learnerId])
+  @@map("progress")
+}
+
+// ----------------------------------------------------------
+// QUIZ (fully online)
+// ----------------------------------------------------------
+
+model Quiz {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  passMark    Int      @default(50) // percentage
+  questions   Question[]
+  submissions QuizSubmission[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([courseId])
+  @@map("quizzes")
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  quizId        String
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text          String
+  type          QuestionType @default(SINGLE_CHOICE)
+  options       Json?        // array of options for choice-based questions
+  correctAnswer Json         // string or array, validated in service layer
+  points        Int          @default(1)
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([quizId])
+  @@map("questions")
+}
+
+model QuizSubmission {
+  id          String   @id @default(uuid())
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  learnerId   String
+  learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  answers     Json     // map of questionId -> submitted answer
+  score       Int?     // percentage
+  passed      Boolean?
+  submittedAt DateTime @default(now())
+
+  @@unique([quizId, learnerId, submittedAt])
+  @@index([learnerId])
+  @@index([quizId])
+  @@map("quiz_submissions")
+}
+
+// ----------------------------------------------------------
+// ASSIGNMENT
+// ----------------------------------------------------------
+
+model Assignment {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  dueDate     DateTime?
+  maxScore    Int      @default(100)
+  submissions AssignmentSubmission[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([courseId])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String            @id @default(uuid())
+  assignmentId String
+  assignment   Assignment        @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  learnerId    String
+  learner      User              @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  content      String            // text submission / external link (no PDF storage requirement)
+  status       SubmissionStatus  @default(PENDING)
+  score        Int?
+  feedback     String?
+  submittedAt  DateTime          @default(now())
+  gradedAt     DateTime?
+
+  @@unique([assignmentId, learnerId])
+  @@index([learnerId])
+  @@map("assignment_submissions")
+}
+
+// ----------------------------------------------------------
+// CERTIFICATE
+// ----------------------------------------------------------
+
+model Certificate {
+  id          String   @id @default(uuid())
+  learnerId   String
+  learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  certificateNo String @unique
+  issuedAt    DateTime @default(now())
+  fileUrl     String?  // generated certificate asset link
+
+  @@unique([learnerId, courseId])
+  @@map("certificates")
+}
+
+// ----------------------------------------------------------
+// NOTIFICATION
+// ----------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(SYSTEM)
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  courseId  String?
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([createdBy])
+  @@map("announcements")
+}
+
+// ----------------------------------------------------------
+// AUDIT LOG
+// ----------------------------------------------------------
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  actorId   String
+  actor     User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action    AuditAction
+  entity    String      // e.g. "Course", "User", "Quiz"
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([entity])
+  @@map("audit_logs")
+}
