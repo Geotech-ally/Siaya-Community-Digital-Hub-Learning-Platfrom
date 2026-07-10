@@ -3,7 +3,13 @@ import type { PaginatedResponse, Role, User } from '@/types';
 
 export const usersService = {
   list: (params?: { role?: Role; search?: string; page?: number; pageSize?: number }) =>
-    api.get<PaginatedResponse<User>>('/users', { params }).then((r) => r.data),
+    api.get<User[] | PaginatedResponse<User>>('/users', { params }).then((r) => {
+      const body = r.data;
+      if (Array.isArray(body)) {
+        return { data: body, total: body.length, page: 1, pageSize: body.length };
+      }
+      return body;
+    }),
 
   get: (id: string) => api.get<User>(`/users/${id}`).then((r) => r.data),
 
@@ -18,4 +24,7 @@ export const usersService = {
   activate: (id: string) => api.patch<User>(`/users/${id}/activate`).then((r) => r.data),
 
   remove: (id: string) => api.delete(`/users/${id}`).then((r) => r.data),
+
+  updateMe: (payload: { firstName?: string; lastName?: string; email?: string }) =>
+    api.patch<User>('/users/me', payload).then((r) => r.data),
 };

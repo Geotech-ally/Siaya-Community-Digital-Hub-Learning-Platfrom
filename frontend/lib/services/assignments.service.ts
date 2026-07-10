@@ -19,7 +19,7 @@ export const assignmentsService = {
 
   submit: (assignmentId: string, payload: { textResponse?: string; fileUrl?: string }) =>
     api
-      .post<AssignmentSubmission>(`/assignments/${assignmentId}/submissions`, payload)
+      .post<AssignmentSubmission>(`/assignments/${assignmentId}/submit`, payload)
       .then((r) => r.data),
 
   listSubmissions: (assignmentId: string, params?: { page?: number; pageSize?: number }) =>

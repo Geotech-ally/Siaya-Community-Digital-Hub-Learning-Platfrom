@@ -27,20 +27,23 @@ export class ProgressService {
   }
 
   async myCourseProgress(learnerId: string, courseId: string) {
-    const modules = await this.prisma.module.findMany({
-      where: { courseId },
-      include: { lessons: true },
-      orderBy: { order: 'asc' },
-    });
+    const [modules, progressRecords] = await this.prisma.$transaction([
+      this.prisma.module.findMany({
+        where: { courseId },
+        select: { lessons: { select: { id: true }, orderBy: { order: 'asc' } } },
+        orderBy: { order: 'asc' },
+      }),
+      this.prisma.progress.findMany({
+        where: { learnerId, lesson: { module: { courseId } } },
+        select: { lessonId: true, completed: true },
+      }),
+    ]);
 
     const lessonIds = modules.flatMap((m) => m.lessons.map((l) => l.id));
     const totalLessons = lessonIds.length;
 
-    const progressRecords = await this.prisma.progress.findMany({
-      where: { learnerId, lessonId: { in: lessonIds } },
-    });
-
-    const completedCount = progressRecords.filter((p) => p.completed).length;
+    const progressMap = new Map(progressRecords.map((p) => [p.lessonId, p.completed]));
+    const completedCount = lessonIds.filter((id) => progressMap.get(id)).length;
     const percentage = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
     return {
@@ -62,17 +65,51 @@ export class ProgressService {
       include: { course: { select: { id: true, title: true } } },
     });
 
-    const summaries = await Promise.all(
-      enrollments.map(async (enrollment) => {
-        const progress = await this.myCourseProgress(learnerId, enrollment.courseId);
-        return {
-          ...progress,
-          courseTitle: enrollment.course.title,
-        };
-      }),
-    );
+    if (enrollments.length === 0) return [];
 
-    return summaries;
+    const courseIds = enrollments.map((e) => e.course.id);
+
+    const [modulesMap, progressRecords] = await this.prisma.$transaction([
+      this.prisma.module.findMany({
+        where: { courseId: { in: courseIds } },
+        select: { id: true, courseId: true, lessons: { select: { id: true } } },
+        orderBy: { order: 'asc' },
+      }),
+      this.prisma.progress.findMany({
+        where: { learnerId, lesson: { module: { courseId: { in: courseIds } } } },
+        select: { lessonId: true, completed: true },
+      }),
+    ]);
+
+    const modulesByCourse = new Map<string, { totalLessons: number; lessonIds: string[] }>();
+    for (const mod of modulesMap) {
+      const lessonIds = mod.lessons.map((l) => l.id);
+      const existing = modulesByCourse.get(mod.courseId);
+      if (existing) {
+        existing.totalLessons += lessonIds.length;
+        existing.lessonIds.push(...lessonIds);
+      } else {
+        modulesByCourse.set(mod.courseId, { totalLessons: lessonIds.length, lessonIds });
+      }
+    }
+
+    const progressMap = new Map(progressRecords.map((p) => [p.lessonId, p.completed]));
+
+    return enrollments.map((enrollment) => {
+      const courseData = modulesByCourse.get(enrollment.course.id) ?? { totalLessons: 0, lessonIds: [] };
+      const completedCount = courseData.lessonIds.filter((id) => progressMap.get(id)).length;
+      const percentage = courseData.totalLessons > 0 ? Math.round((completedCount / courseData.totalLessons) * 100) : 0;
+      return {
+        ...enrollment.course,
+        lessonsCompleted: completedCount,
+        totalLessons: courseData.totalLessons,
+        quizzesPassed: 0,
+        totalQuizzes: 0,
+        assignmentsSubmitted: 0,
+        totalAssignments: 0,
+        overallPercent: percentage,
+      };
+    });
   }
 
   async learnerCourseProgress(learnerId: string, courseId: string, actorId: string, actorRole: Role) {

@@ -1,4 +1,4 @@
-# Community LMS — Frontend
+# Siaya Community Digital Hub Learning Platform — Frontend
 
 Production-ready Next.js (App Router) frontend for a role-based Learning
 Management System, built to integrate with a NestJS backend.

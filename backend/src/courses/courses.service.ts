@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto, UpdateCourseDto, AssignTrainerDto } from './dto/course.dto';
 import { AuditService } from '../audit/audit.service';
@@ -29,7 +30,12 @@ export class CoursesService {
     const baseSlug = slugify(dto.title);
     let slug = baseSlug;
     let suffix = 1;
-    while (await this.prisma.course.findUnique({ where: { slug } })) {
+    const existing = await this.prisma.course.findMany({
+      where: { slug: { startsWith: baseSlug } },
+      select: { slug: true },
+    });
+    const existingSlugs = new Set(existing.map((c) => c.slug));
+    while (existingSlugs.has(slug)) {
       slug = `${baseSlug}-${suffix++}`;
     }
 
@@ -54,7 +60,7 @@ export class CoursesService {
     return course;
   }
 
-  async findAll(params: { status?: string; department?: string; search?: string }) {
+  async findAll(params: { status?: string; department?: string; search?: string; light?: boolean } = {}) {
     const where: any = {};
     if (params.status) where.status = params.status as any;
     if (params.department) where.department = params.department as any;
@@ -65,20 +71,36 @@ export class CoursesService {
       ];
     }
 
+    const light = params.light ?? false;
+
     const courses = await this.prisma.course.findMany({
       where,
       include: {
         category: true,
-        modules: { include: { lessons: true } },
         trainers: { include: { trainer: { select: { id: true, firstName: true, lastName: true, email: true } } } },
-        _count: { select: { enrollments: true, modules: true } },
+        _count: { select: { enrollments: true, modules: light ? undefined : true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    if (light) {
+      const lessonCounts = await this.prisma.$queryRaw<{ courseId: string; count: bigint }[]>`
+        SELECT m."courseId" AS "courseId", COUNT(l.id) AS "count"
+        FROM modules m
+        JOIN lessons l ON l."moduleId" = m.id
+        WHERE m."courseId" IN (${Prisma.join(courses.map((c) => c.id))})
+        GROUP BY m."courseId"
+      `;
+      const counts = new Map(lessonCounts.map((r) => [r.courseId, Number(r.count)]));
+      return courses.map((course) => ({
+        ...course,
+        _count: { ...course._count, modules: counts.get(course.id) ?? 0 },
+      }));
+    }
+
     return courses.map((course) => {
       const primaryTrainer = course.trainers[0]?.trainer;
-      const lessonCount = course.modules.reduce((sum, module) => sum + (module.lessons?.length || 0), 0);
+      const lessonCount = course._count.modules ?? 0;
       return {
         ...course,
         enrolledCount: course._count.enrollments,
@@ -157,18 +179,23 @@ export class CoursesService {
   }
 
   async assignTrainer(courseId: string, dto: AssignTrainerDto, adminId: string) {
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) throw new NotFoundException('Course not found');
+    const assignment = await this.prisma.$transaction(async (tx) => {
+      const course = await tx.course.findUnique({ where: { id: courseId }, select: { id: true } });
+      if (!course) throw new NotFoundException('Course not found');
 
-    const trainer = await this.prisma.user.findUnique({ where: { id: dto.trainerId } });
-    if (!trainer || trainer.role !== Role.TRAINER) {
-      throw new BadRequestException('Target user is not a valid trainer');
-    }
+      const trainer = await tx.user.findUnique({
+        where: { id: dto.trainerId },
+        select: { id: true, role: true },
+      });
+      if (!trainer || trainer.role !== Role.TRAINER) {
+        throw new BadRequestException('Target user is not a valid trainer');
+      }
 
-    const assignment = await this.prisma.courseTrainer.upsert({
-      where: { courseId_trainerId: { courseId, trainerId: dto.trainerId } },
-      update: {},
-      create: { courseId, trainerId: dto.trainerId },
+      return tx.courseTrainer.upsert({
+        where: { courseId_trainerId: { courseId, trainerId: dto.trainerId } },
+        update: {},
+        create: { courseId, trainerId: dto.trainerId },
+      });
     });
 
     await this.auditService.log({

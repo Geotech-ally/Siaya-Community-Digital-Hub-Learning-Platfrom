@@ -1,7 +1,7 @@
 {
-  "name": "Community LMS",
-  "short_name": "LMS",
-  "description": "Course delivery, quizzes, assignments, and progress tracking.",
+  "name": "Siaya Community Digital Hub Learning Platform",
+  "short_name": "Siaya Digital Hub",
+  "description": "Siaya Community Digital Hub Learning Platform — course delivery, quizzes, assignments, and progress tracking.",
   "start_url": "/dashboard/learner",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -23,9 +23,6 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(
-    `Siaya Community Digital Hub Learning Platform API running on port ${port}`,
-  );
 }
 
 bootstrap();

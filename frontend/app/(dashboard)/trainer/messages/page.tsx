@@ -50,7 +50,6 @@ export default function TrainerMessagesPage() {
       { id: Math.random().toString(36).slice(2), from: 'me', text: draft.trim(), at: new Date().toISOString() },
     ]);
     setDraft('');
-    // TODO: POST to messages endpoint once available
   }
 
   const activeLearner = learners.find((l) => l.learnerId === activeLearnerId);

@@ -23,6 +23,14 @@ export class AnalyticsController {
     return this.analyticsService.trainer(userId);
   }
 
+  @Get('dashboard-summary')
+  dashboardSummary(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: Role,
+  ) {
+    return this.analyticsService.dashboardSummary(userId, role);
+  }
+
   @Get('weekly-report')
   weeklyReport() {
     return this.analyticsService.weeklyReport();

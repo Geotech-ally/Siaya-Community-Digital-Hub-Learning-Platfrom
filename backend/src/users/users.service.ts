@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrainerDto } from './dto/create-trainer.dto';
-import { UpdateUserStatusDto } from './dto/update-user.dto';
+import { UpdateUserStatusDto, UpdateUserProfileDto } from './dto/update-user.dto';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -121,18 +121,20 @@ export class UsersService {
     return this.sanitize(user);
   }
 
-  async update(id: string, data: { fullName?: string; email?: string; role?: Role }) {
+  async update(id: string, data: { firstName?: string; lastName?: string; email?: string; role?: Role; isActive?: boolean }) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
 
     const updateData: any = {};
-    if (data.email) updateData.email = data.email;
-    if (data.role) updateData.role = data.role;
-    if (data.fullName) {
-      const [firstName, ...rest] = data.fullName.trim().split(/\s+/);
-      updateData.firstName = firstName;
-      updateData.lastName = rest.join(' ') || firstName;
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.email !== undefined && data.email !== user.email) {
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      if (existing) throw new ConflictException('An account with this email already exists');
+      updateData.email = data.email;
     }
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     const updated = await this.prisma.user.update({
       where: { id },
@@ -195,6 +197,34 @@ export class UsersService {
 
   async getOwnProfile(userId: string) {
     return this.findOne(userId);
+  }
+
+  async updateOwnProfile(
+    userId: string,
+    data: { firstName?: string; lastName?: string; email?: string },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const updateData: { firstName?: string; lastName?: string; email?: string } = {};
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.email !== undefined && data.email !== user.email) {
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      if (existing) throw new ConflictException('An account with this email already exists');
+      updateData.email = data.email;
+    }
+
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: updateData });
+    await this.auditService.log({
+      actorId: userId,
+      action: 'UPDATE',
+      entity: 'User',
+      entityId: userId,
+      metadata: { selfProfile: true },
+    });
+
+    return this.sanitize(updated);
   }
 
   private sanitize(user: { id: string; email: string; firstName: string; lastName: string; role: Role; isActive: boolean; createdAt: Date }) {

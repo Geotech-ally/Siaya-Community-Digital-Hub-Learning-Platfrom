@@ -7,29 +7,32 @@ export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async platform() {
-    const [totalUsers, totalTrainers, totalLearners, totalCourses, totalEnrollments, enrollments] =
+    const [totalUsers, totalTrainers, totalLearners, totalCourses, totalEnrollments, enrollmentsByDepartment] =
       await Promise.all([
         this.prisma.user.count(),
         this.prisma.user.count({ where: { role: Role.TRAINER } }),
         this.prisma.user.count({ where: { role: Role.LEARNER } }),
         this.prisma.course.count(),
         this.prisma.enrollment.count(),
-        this.prisma.enrollment.findMany({
-          include: { course: { select: { department: true } } },
-        }),
+        this.prisma.$queryRaw<
+          { department: string; count: number }[]
+        >`
+          SELECT c.department AS "department", COUNT(e.id) AS "count"
+          FROM courses c
+          LEFT JOIN enrollments e ON e."courseId" = c.id
+          GROUP BY c.department
+          ORDER BY "count" DESC
+        `,
       ]);
 
-    const completed = enrollments.filter((e) => e.status === EnrollmentStatus.COMPLETED).length;
+    const completed = await this.prisma.enrollment.count({
+      where: { status: EnrollmentStatus.COMPLETED },
+    });
     const completionRate = totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 100) : 0;
 
-    const departmentCounts: Record<string, number> = {};
-    enrollments.forEach((e) => {
-      const dept = e.course.department || 'UNKNOWN';
-      departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
-    });
-    const enrollmentsByDepartment = Object.entries(departmentCounts)
-      .map(([department, count]) => ({ department, count }))
-      .sort((a, b) => b.count - a.count);
+    const enrollmentsByDepartmentClean = enrollmentsByDepartment
+      .filter((d) => d.department !== null)
+      .map((d) => ({ department: d.department, count: Number(d.count) }));
 
     const enrollmentsOverTime = await this.prisma.$queryRaw<
       { date: string; count: number }[]
@@ -48,8 +51,26 @@ export class AnalyticsService {
       totalCourses,
       totalEnrollments,
       completionRate,
-      enrollmentsByDepartment,
+      enrollmentsByDepartment: enrollmentsByDepartmentClean,
       enrollmentsOverTime: enrollmentsOverTime.reverse(),
+    };
+  }
+
+  async dashboardSummary(userId: string, role: Role) {
+    if (role === Role.ADMIN) {
+      return this.platform();
+    }
+
+    if (role === Role.TRAINER) {
+      return this.trainer(userId);
+    }
+
+    return {
+      totalCourses: 0,
+      totalEnrollments: 0,
+      completionRate: 0,
+      enrollmentsByDepartment: [],
+      enrollmentsOverTime: [],
     };
   }
 

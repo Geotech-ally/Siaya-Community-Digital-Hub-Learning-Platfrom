@@ -30,17 +30,15 @@ export class LessonsService {
     let moduleId = dto.moduleId;
 
     if (!moduleId && dto.courseId) {
-      const course = await this.prisma.course.findUnique({ where: { id: dto.courseId } });
-      if (!course) throw new NotFoundException('Course not found');
       await this.assertCourseAccess(dto.courseId, actorId, actorRole);
-
-      let module = await this.prisma.module.findFirst({ where: { courseId: dto.courseId } });
+      const module = await this.prisma.module.findFirst({ where: { courseId: dto.courseId } });
       if (!module) {
-        module = await this.prisma.module.create({
+        moduleId = (await this.prisma.module.create({
           data: { title: 'Default Module', courseId: dto.courseId, order: 0 },
-        });
+        })).id;
+      } else {
+        moduleId = module.id;
       }
-      moduleId = module.id;
     } else if (moduleId) {
       const mod = await this.prisma.module.findUnique({ where: { id: moduleId } });
       if (!mod) throw new NotFoundException('Module not found');
@@ -66,7 +64,7 @@ export class LessonsService {
   async updateLesson(id: string, dto: UpdateLessonDto, actorId: string, actorRole: Role) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      include: { module: true },
+      select: { module: { select: { courseId: true } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     await this.assertCourseAccess(lesson.module.courseId, actorId, actorRole);
@@ -79,7 +77,7 @@ export class LessonsService {
   async removeLesson(id: string, actorId: string, actorRole: Role) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      include: { module: true },
+      select: { module: { select: { courseId: true } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     await this.assertCourseAccess(lesson.module.courseId, actorId, actorRole);

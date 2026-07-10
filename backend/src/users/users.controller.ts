@@ -1,49 +1,27 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
-import { CreateTrainerDto } from './dto/create-trainer.dto';
-import { UpdateUserStatusDto } from './dto/update-user.dto';
-
-class CreateUserDto {
-  @IsNotEmpty()
-  @IsString()
-  fullName: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsString()
-  @MinLength(8)
-  password: string;
-
-  @IsEnum(Role)
-  role: Role;
-}
-
-class UpdateUserDto {
-  @IsOptional()
-  @IsString()
-  fullName?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsEnum(Role)
-  role?: Role;
-}
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserStatusDto, UpdateUserProfileDto } from './dto/update-user.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  getMe(@CurrentUser('userId') userId: string) {
+    return this.usersService.getOwnProfile(userId);
+  }
+
+  @Patch('me')
+  updateMe(@CurrentUser('userId') userId: string, @Body() dto: UpdateUserProfileDto) {
+    return this.usersService.updateOwnProfile(userId, dto);
+  }
 
   @Roles(Role.ADMIN)
   @Post()
@@ -53,7 +31,7 @@ export class UsersController {
 
   @Roles(Role.ADMIN)
   @Post('trainers')
-  createTrainer(@Body() dto: CreateTrainerDto, @CurrentUser('userId') adminId: string) {
+  createTrainer(@Body() dto: CreateUserDto, @CurrentUser('userId') adminId: string) {
     return this.usersService.createTrainer(dto, adminId);
   }
 
@@ -71,7 +49,7 @@ export class UsersController {
 
   @Roles(Role.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  update(@Param('id') id: string, @Body() dto: UpdateUserProfileDto) {
     return this.usersService.update(id, dto);
   }
 
@@ -103,8 +81,4 @@ export class UsersController {
     return this.usersService.setActiveStatus(id, dto, adminId);
   }
 
-  @Get('me/profile')
-  getOwnProfile(@CurrentUser('userId') userId: string) {
-    return this.usersService.getOwnProfile(userId);
-  }
 }

@@ -109,7 +109,9 @@ model User {
 
   auditLogs AuditLog[]
 
-  @@index([role])
+  @@index([email])
+  @@index([role, isActive])
+  @@index([createdByAdminId])
   @@map("users")
 }
 
@@ -159,6 +161,9 @@ model Course {
   @@index([status])
   @@index([categoryId])
   @@index([department])
+  @@index([createdById])
+  @@index([status, department])
+  @@index([createdById, status])
   @@map("courses")
 }
 
@@ -173,6 +178,7 @@ model CourseTrainer {
 
   @@unique([courseId, trainerId])
   @@index([trainerId])
+  @@index([courseId, trainerId])
   @@map("course_trainers")
 }
 
@@ -225,7 +231,10 @@ model Enrollment {
   completedAt DateTime?
 
   @@unique([learnerId, courseId])
+  @@index([learnerId])
   @@index([courseId])
+  @@index([status, courseId])
+  @@index([status, learnerId])
   @@map("enrollments")
 }
 
@@ -338,6 +347,7 @@ model AssignmentSubmission {
 
   @@unique([assignmentId, learnerId])
   @@index([learnerId])
+  @@index([assignmentId])
   @@map("assignment_submissions")
 }
 

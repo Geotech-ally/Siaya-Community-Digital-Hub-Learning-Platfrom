@@ -3,7 +3,15 @@ import type { Course, Department, PaginatedResponse } from '@/types';
 
 export const coursesService = {
   list: (params?: { department?: Department; search?: string; page?: number; pageSize?: number }) =>
-    api.get<PaginatedResponse<Course>>('/courses', { params }).then((r) => r.data),
+    api.get<Course[] | PaginatedResponse<Course>>('/courses', { params }).then((r) => {
+      // Backend returns a plain array; normalize to the paginated envelope the
+      // UI expects so every consumer can read `data`/`total` consistently.
+      const body = r.data;
+      if (Array.isArray(body)) {
+        return { data: body, total: body.length, page: 1, pageSize: body.length };
+      }
+      return body;
+    }),
 
   get: (id: string) => api.get<Course>(`/courses/${id}`).then((r) => r.data),
 

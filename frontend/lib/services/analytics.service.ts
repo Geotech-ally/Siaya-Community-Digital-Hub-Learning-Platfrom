@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { tokenStorage } from '@/lib/auth';
 import type { AuditLogEntry, PaginatedResponse } from '@/types';
 
 export interface PlatformAnalytics {
@@ -20,7 +21,26 @@ export interface TrainerAnalytics {
   courseBreakdown: { courseId: string; courseTitle: string; learners: number; completionRate: number }[];
 }
 
+export interface DashboardSummaryPayload {
+  platform: PlatformAnalytics | null;
+  trainer: TrainerAnalytics | null;
+}
+
 export const analyticsService = {
+  dashboardSummary: async (): Promise<DashboardSummaryPayload> => {
+    const token = tokenStorage.getAccessToken();
+    const response = await fetch('/api/dashboard-summary', {
+      cache: 'force-cache',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load dashboard summary');
+    }
+
+    return response.json() as Promise<DashboardSummaryPayload>;
+  },
+
   platform: () => api.get<PlatformAnalytics>('/analytics/platform').then((r) => r.data),
 
   trainer: () => api.get<TrainerAnalytics>('/analytics/trainer').then((r) => r.data),

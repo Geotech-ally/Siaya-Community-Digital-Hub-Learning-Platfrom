@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import type { Role } from '@/types';
 import { navByRole, roleLabel } from './navConfig';
+import { PLATFORM_NAME } from '@/lib/brand';
 import { cn } from '@/common/utils/cn';
 
 export function Sidebar({ role }: { role: Role }) {
@@ -18,7 +19,9 @@ export function Sidebar({ role }: { role: Role }) {
           <GraduationCap className="h-4.5 w-4.5 text-white" />
         </div>
         <div>
-          <p className="font-display text-sm font-semibold leading-tight text-ink-900">Community LMS</p>
+          <p className="font-display text-[13px] font-semibold leading-tight text-ink-900">
+            {PLATFORM_NAME}
+          </p>
           <p className="text-xs leading-tight text-ink-500">{roleLabel[role]}</p>
         </div>
       </div>

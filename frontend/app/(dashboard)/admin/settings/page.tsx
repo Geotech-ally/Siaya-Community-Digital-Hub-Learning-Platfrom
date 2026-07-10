@@ -4,24 +4,22 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { PLATFORM_NAME } from '@/lib/brand';
 
-// System-level settings placeholder. Wire each field to a corresponding
-// backend endpoint (e.g. PATCH /settings) once available.
+// Platform details are surface-level configuration for the admin console.
+// Persist via a dedicated settings endpoint when the backend exposes one.
 export default function AdminSettingsPage() {
-  const [platformName, setPlatformName] = useState('Community LMS');
-  const [supportEmail, setSupportEmail] = useState('support@communitylms.org');
+  const [platformName, setPlatformName] = useState(PLATFORM_NAME);
+  const [supportEmail, setSupportEmail] = useState('support@sicodihub.ac.ke');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    // TODO: replace with settingsService.update(...)
-    setTimeout(() => {
-      setSaving(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    }, 500);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   return (

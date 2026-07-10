@@ -1,4 +1,5 @@
 import { GraduationCap } from 'lucide-react';
+import { PLATFORM_NAME } from '@/lib/brand';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,7 +9,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
-          <span className="font-display text-lg font-semibold text-ink-900">Community LMS</span>
+          <span className="font-display text-base font-semibold leading-tight text-ink-900">
+            {PLATFORM_NAME}
+          </span>
         </div>
         <div className="mx-auto w-full max-w-sm">{children}</div>
       </div>

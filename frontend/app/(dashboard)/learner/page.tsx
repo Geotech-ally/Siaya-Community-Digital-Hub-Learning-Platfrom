@@ -12,6 +12,7 @@ import { progressService } from '@/lib/services/progress.service';
 import { certificatesService } from '@/lib/services/certificates.service';
 import type { Enrollment, ProgressSummary, Certificate } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
+import { PLATFORM_TAGLINE } from '@/lib/brand';
 
 export default function LearnerOverviewPage() {
   const user = useAuthStore((s) => s.user);
@@ -34,8 +35,45 @@ export default function LearnerOverviewPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const overallProgress = loading
+    ? 0
+    : progress.reduce((sum, p) => sum + (p.overallPercent || 0), 0) /
+      (progress.length || 1);
+  const firstName = user?.fullName?.split(' ')[0] ?? 'there';
+
+  const progressByCourse = new Map(progress.map((p) => [p.courseId, p]));
+
   return (
     <div className="flex flex-col gap-6">
+      <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white sm:p-8">
+        <p className="font-display text-sm font-medium uppercase tracking-wide text-brand-200">
+          {PLATFORM_TAGLINE}
+        </p>
+        <h1 className="mt-2 font-display text-2xl font-semibold sm:text-3xl">
+          {firstName}, your skills are building every day.
+        </h1>
+        <p className="mt-2 max-w-xl text-sm text-brand-100">
+          Track your real progress, keep your streak alive, and earn certificates as you
+          complete courses. Consistency beats intensity.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          <div className="rounded-xl bg-white/10 px-4 py-3">
+            <p className="text-xs text-brand-200">Overall progress</p>
+            <p className="font-display text-xl font-semibold">{Math.round(overallProgress)}%</p>
+          </div>
+          <div className="rounded-xl bg-white/10 px-4 py-3">
+            <p className="text-xs text-brand-200">Courses in progress</p>
+            <p className="font-display text-xl font-semibold">
+              {loading ? '—' : enrollments.filter((e) => e.status === 'ACTIVE').length}
+            </p>
+          </div>
+          <div className="rounded-xl bg-white/10 px-4 py-3">
+            <p className="text-xs text-brand-200">Certificates</p>
+            <p className="font-display text-xl font-semibold">{loading ? '—' : certificates.length}</p>
+          </div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="flex items-center gap-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50">
@@ -98,9 +136,11 @@ export default function LearnerOverviewPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-ink-900">{e.courseTitle}</p>
-                  <ProgressBar value={e.progressPercent} className="mt-1.5" />
+                  <ProgressBar value={progressByCourse.get(e.courseId)?.overallPercent ?? 0} className="mt-1.5" />
                 </div>
-                <span className="shrink-0 text-sm text-ink-500">{Math.round(e.progressPercent)}%</span>
+                <span className="shrink-0 text-sm text-ink-500">
+                  {Math.round(progressByCourse.get(e.courseId)?.overallPercent ?? 0)}%
+                </span>
                 <Link
                   href={`/courses/${e.courseId}`}
                   className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"

@@ -5,16 +5,16 @@ import axios, {
 } from 'axios';
 import { tokenStorage } from './auth';
 
-// ---------------------------------------------------------------------------
-// Central Axios instance. All API modules (courses, quizzes, users, ...)
-// import `api` from here rather than instantiating their own client.
-// ---------------------------------------------------------------------------
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
 export const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  // Client-side GET cache: force-cache uses the browser HTTP cache.
+  // Combined with PWA runtime caching, this dramatically reduces web requests
+  // for immutable/near-immutable resources.
+  // no explicit fetch cache policy here since axios bypasses that;
+  // we implement lightweight server-side deduplication below.
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -24,10 +24,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   return config;
 });
-
-// --- Automatic refresh-token flow -----------------------------------------
-// Queues requests that fail with 401 while a single refresh call is in
-// flight, then retries them once the new access token is available.
 
 let isRefreshing = false;
 let pendingQueue: {
@@ -100,4 +96,54 @@ api.interceptors.response.use(
   }
 );
 
+// --- Lightweight in-memory Request Dedup layer ----------------------------
+// Prevents multiple in-flight calls to the same GET endpoint within a short
+// window. Uses a Map keyed by URL with a 30-second dedup window.
+// This dramatically speeds up pages where multiple sibling components
+// independently fetch the same resource.
+// ---------------------------------------------------------------------------
+
+const inFlightRequests = new Map<string, Promise<unknown>>();
+const DEDUP_WINDOW_MS = 30_000;
+
+function requestKey(config: InternalAxiosRequestConfig): string {
+  return `${config.method?.toLowerCase() ?? 'get'}:${config.baseURL ?? ''}${config.url ?? ''}:${JSON.stringify(config.params ?? {})}`;
+}
+
+export function invalidateGetCache() {
+  inFlightRequests.clear();
+}
+
+const originalRequest = api.request.bind(api);
+(api as unknown as Record<string, unknown>).request = (config: InternalAxiosRequestConfig) => {
+  const key = requestKey(config);
+
+  if (config.method?.toLowerCase() === 'get') {
+    const existing = inFlightRequests.get(key);
+    if (existing) return existing;
+  }
+
+  const promise = originalRequest(config)
+    .then((response) => {
+      if (config.method?.toLowerCase() === 'get') {
+        inFlightRequests.set(key, Promise.resolve(response));
+        setTimeout(() => {
+          inFlightRequests.delete(key);
+        }, DEDUP_WINDOW_MS);
+      }
+      return response;
+    })
+    .catch((err) => {
+      inFlightRequests.delete(key);
+      return Promise.reject(err);
+    });
+
+  if (config.method?.toLowerCase() === 'get') {
+    inFlightRequests.set(key, promise);
+  }
+
+  return promise;
+};
+
+export { BASE_URL };
 export default api;

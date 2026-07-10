@@ -23,13 +23,13 @@ export default function LearnerCertificatesPage() {
   }, []);
 
   async function download(cert: Certificate) {
-    const blob = await certificatesService.download(cert.id);
-    const url = window.URL.createObjectURL(blob as Blob);
+    const { downloadUrl } = await certificatesService.download(cert.id);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = downloadUrl;
     a.download = `${cert.courseTitle.replace(/\s+/g, '-')}-certificate.pdf`;
+    a.target = '_blank';
+    a.rel = 'noopener';
     a.click();
-    window.URL.revokeObjectURL(url);
   }
 
   if (loading) {

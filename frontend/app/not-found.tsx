@@ -8,7 +8,9 @@ export default function NotFound() {
         <GraduationCap className="h-7 w-7 text-brand-600" />
       </div>
       <h1 className="font-display text-2xl font-semibold text-ink-900">Page not found</h1>
-      <p className="max-w-sm text-sm text-ink-500">The page you're looking for doesn't exist or may have moved.</p>
+      <p className="max-w-sm text-sm text-ink-500">
+        The page you&apos;re looking for doesn&apos;t exist or may have moved.
+      </p>
       <Link href="/login" className="text-sm font-medium text-brand-600 hover:underline">
         Go to sign in
       </Link>

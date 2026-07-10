@@ -1,9 +1,22 @@
 import api from '@/lib/api';
 import type { Lesson } from '@/types';
 
+interface ModuleShape {
+  id: string;
+  title: string;
+  order: number;
+  lessons: Lesson[];
+}
+
 export const lessonsService = {
   listByCourse: (courseId: string) =>
-    api.get<Lesson[]>(`/courses/${courseId}/lessons`).then((r) => r.data),
+    api.get<ModuleShape[]>(`/courses/${courseId}/lessons`).then((r) => {
+      // Backend returns modules (each with nested lessons); flatten into a
+      // single ordered lesson list so the UI can render and navigate them.
+      return r.data
+        .flatMap((m) => (m.lessons ?? []).map((l) => ({ ...l, moduleId: m.id, moduleTitle: m.title })))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }),
 
   get: (courseId: string, lessonId: string) =>
     api.get<Lesson>(`/courses/${courseId}/lessons/${lessonId}`).then((r) => r.data),
