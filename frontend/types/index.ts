@@ -49,7 +49,7 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  fullName: string;
+  name: string;
   email: string;
   password: string;
 }

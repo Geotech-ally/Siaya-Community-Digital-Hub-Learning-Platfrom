@@ -91,8 +91,8 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Trainer/Admin relations
-  coursesCreated  Course[]        @relation("CourseCreatedBy")
-  trainerCourses  CourseTrainer[]
+  coursesCreated Course[]        @relation("CourseCreatedBy")
+  trainerCourses CourseTrainer[]
 
   // Learner relations
   enrollments     Enrollment[]
@@ -109,7 +109,7 @@ model User {
 
   auditLogs AuditLog[]
 
-  @@index([email])
+  @@index([role])
   @@index([role, isActive])
   @@index([createdByAdminId])
   @@map("users")
@@ -148,11 +148,11 @@ model Course {
   createdById String
   createdBy   User   @relation("CourseCreatedBy", fields: [createdById], references: [id])
 
-  trainers    CourseTrainer[]
-  modules     Module[]
-  enrollments Enrollment[]
-  quizzes     Quiz[]
-  assignments Assignment[]
+  trainers     CourseTrainer[]
+  modules      Module[]
+  enrollments  Enrollment[]
+  quizzes      Quiz[]
+  assignments  Assignment[]
   certificates Certificate[]
 
   createdAt DateTime @default(now())
@@ -169,11 +169,11 @@ model Course {
 
 // Join table: trainers assigned to a course (by Admin)
 model CourseTrainer {
-  id        String   @id @default(uuid())
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  trainerId String
-  trainer   User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  trainerId  String
+  trainer    User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now())
 
   @@unique([courseId, trainerId])
@@ -201,16 +201,16 @@ model Module {
 }
 
 model Lesson {
-  id          String   @id @default(uuid())
-  title       String
-  content     String   // structured rich-text / markdown content
-  videoUrl    String?  // Mux/S3 video link
-  order       Int      @default(0)
-  moduleId    String
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress    Progress[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String     @id @default(uuid())
+  title     String
+  content   String // structured rich-text / markdown content
+  videoUrl  String? // Mux/S3 video link
+  order     Int        @default(0)
+  moduleId  String
+  module    Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress  Progress[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([moduleId])
   @@map("lessons")
@@ -221,13 +221,13 @@ model Lesson {
 // ----------------------------------------------------------
 
 model Enrollment {
-  id        String           @id @default(uuid())
-  learnerId String
-  learner   User             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  courseId  String
-  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  status    EnrollmentStatus @default(ACTIVE)
-  enrolledAt DateTime        @default(now())
+  id          String           @id @default(uuid())
+  learnerId   String
+  learner     User             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
   completedAt DateTime?
 
   @@unique([learnerId, courseId])
@@ -235,6 +235,8 @@ model Enrollment {
   @@index([courseId])
   @@index([status, courseId])
   @@index([status, learnerId])
+  @@index([enrolledAt])
+  @@index([completedAt])
   @@map("enrollments")
 }
 
@@ -243,18 +245,20 @@ model Enrollment {
 // ----------------------------------------------------------
 
 model Progress {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   learnerId   String
-  learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  learner     User      @relation(fields: [learnerId], references: [id], onDelete: Cascade)
   lessonId    String
-  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  completed   Boolean  @default(false)
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([learnerId, lessonId])
   @@index([learnerId])
+  @@index([lessonId])
+  @@index([completed, learnerId])
   @@map("progress")
 }
 
@@ -263,16 +267,16 @@ model Progress {
 // ----------------------------------------------------------
 
 model Quiz {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
   title       String
   description String?
   courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  passMark    Int      @default(50) // percentage
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  passMark    Int              @default(50) // percentage
   questions   Question[]
   submissions QuizSubmission[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([courseId])
   @@map("quizzes")
@@ -284,8 +288,8 @@ model Question {
   quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
   text          String
   type          QuestionType @default(SINGLE_CHOICE)
-  options       Json?        // array of options for choice-based questions
-  correctAnswer Json         // string or array, validated in service layer
+  options       Json? // array of options for choice-based questions
+  correctAnswer Json // string or array, validated in service layer
   points        Int          @default(1)
   order         Int          @default(0)
   createdAt     DateTime     @default(now())
@@ -301,14 +305,17 @@ model QuizSubmission {
   quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   learnerId   String
   learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  answers     Json     // map of questionId -> submitted answer
-  score       Int?     // percentage
+  answers     Json // map of questionId -> submitted answer
+  score       Int? // percentage
   passed      Boolean?
   submittedAt DateTime @default(now())
 
   @@unique([quizId, learnerId, submittedAt])
   @@index([learnerId])
   @@index([quizId])
+  @@index([quizId, learnerId])
+  @@index([passed])
+  @@index([submittedAt])
   @@map("quiz_submissions")
 }
 
@@ -317,37 +324,39 @@ model QuizSubmission {
 // ----------------------------------------------------------
 
 model Assignment {
-  id          String   @id @default(uuid())
+  id          String                 @id @default(uuid())
   title       String
   description String
   courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   dueDate     DateTime?
-  maxScore    Int      @default(100)
+  maxScore    Int                    @default(100)
   submissions AssignmentSubmission[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 
   @@index([courseId])
   @@map("assignments")
 }
 
 model AssignmentSubmission {
-  id           String            @id @default(uuid())
+  id           String           @id @default(uuid())
   assignmentId String
-  assignment   Assignment        @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   learnerId    String
-  learner      User              @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  content      String            // text submission / external link (no PDF storage requirement)
-  status       SubmissionStatus  @default(PENDING)
+  learner      User             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  content      String // text submission / external link (no PDF storage requirement)
+  status       SubmissionStatus @default(PENDING)
   score        Int?
   feedback     String?
-  submittedAt  DateTime          @default(now())
+  submittedAt  DateTime         @default(now())
   gradedAt     DateTime?
 
   @@unique([assignmentId, learnerId])
   @@index([learnerId])
   @@index([assignmentId])
+  @@index([status])
+  @@index([submittedAt])
   @@map("assignment_submissions")
 }
 
@@ -356,16 +365,18 @@ model AssignmentSubmission {
 // ----------------------------------------------------------
 
 model Certificate {
-  id          String   @id @default(uuid())
-  learnerId   String
-  learner     User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  certificateNo String @unique
-  issuedAt    DateTime @default(now())
-  fileUrl     String?  // generated certificate asset link
+  id            String   @id @default(uuid())
+  learnerId     String
+  learner       User     @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  certificateNo String   @unique
+  issuedAt      DateTime @default(now())
+  fileUrl       String? // generated certificate asset link
 
   @@unique([learnerId, courseId])
+  @@index([learnerId])
+  @@index([courseId])
   @@map("certificates")
 }
 
@@ -384,6 +395,8 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
   @@map("notifications")
 }
 
@@ -410,12 +423,14 @@ model AuditLog {
   actorId   String
   actor     User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
   action    AuditAction
-  entity    String      // e.g. "Course", "User", "Quiz"
+  entity    String // e.g. "Course", "User", "Quiz"
   entityId  String?
   metadata  Json?
   createdAt DateTime    @default(now())
 
   @@index([actorId])
   @@index([entity])
+  @@index([createdAt])
+  @@index([actorId, createdAt])
   @@map("audit_logs")
 }

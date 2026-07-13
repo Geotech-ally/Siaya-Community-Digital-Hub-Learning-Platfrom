@@ -5,7 +5,8 @@ import axios, {
 } from 'axios';
 import { tokenStorage } from './auth';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+export const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 export const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

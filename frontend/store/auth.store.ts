@@ -49,8 +49,9 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
           return user;
         } catch (err: any) {
-          const message = err?.response?.data?.message ?? 'Unable to create your account.';
-          set({ error: message, isLoading: false });
+          const data = err?.response?.data;
+          const message = data?.error ?? data?.message ?? err?.message ?? 'Unable to create your account.';
+          set({ error: Array.isArray(message) ? message.join('; ') : message, isLoading: false });
           throw err;
         }
       },

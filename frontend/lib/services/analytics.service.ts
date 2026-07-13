@@ -1,4 +1,4 @@
-import api from '@/lib/api';
+import api, { API_ORIGIN } from '@/lib/api';
 import { tokenStorage } from '@/lib/auth';
 import type { AuditLogEntry, PaginatedResponse } from '@/types';
 
@@ -29,7 +29,7 @@ export interface DashboardSummaryPayload {
 export const analyticsService = {
   dashboardSummary: async (): Promise<DashboardSummaryPayload> => {
     const token = tokenStorage.getAccessToken();
-    const response = await fetch('/api/dashboard-summary', {
+    const response = await fetch(`${API_ORIGIN}/api/v1/dashboard`, {
       cache: 'force-cache',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });

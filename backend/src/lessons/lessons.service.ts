@@ -31,7 +31,7 @@ export class LessonsService {
 
     if (!moduleId && dto.courseId) {
       await this.assertCourseAccess(dto.courseId, actorId, actorRole);
-      const module = await this.prisma.module.findFirst({ where: { courseId: dto.courseId } });
+      const module = await this.prisma.module.findFirst({ where: { courseId: dto.courseId }, select: { id: true } });
       if (!module) {
         moduleId = (await this.prisma.module.create({
           data: { title: 'Default Module', courseId: dto.courseId, order: 0 },
@@ -40,7 +40,7 @@ export class LessonsService {
         moduleId = module.id;
       }
     } else if (moduleId) {
-      const mod = await this.prisma.module.findUnique({ where: { id: moduleId } });
+      const mod = await this.prisma.module.findUnique({ where: { id: moduleId }, select: { courseId: true } });
       if (!mod) throw new NotFoundException('Module not found');
       await this.assertCourseAccess(mod.courseId, actorId, actorRole);
     } else {
@@ -92,14 +92,38 @@ export class LessonsService {
     return this.prisma.module.findMany({
       where: { courseId },
       orderBy: { order: 'asc' },
-      include: { lessons: { orderBy: { order: 'asc' } } },
+      select: {
+        id: true,
+        title: true,
+        order: true,
+        courseId: true,
+        lessons: {
+          select: { id: true, title: true, content: true, videoUrl: true, order: true, createdAt: true, updatedAt: true },
+          orderBy: { order: 'asc' },
+        },
+      },
     });
   }
 
   async findLessonById(id: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      include: { module: { include: { course: true } } },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        videoUrl: true,
+        order: true,
+        createdAt: true,
+        updatedAt: true,
+        module: {
+          select: {
+            id: true,
+            title: true,
+            course: { select: { id: true, title: true, slug: true, department: true, status: true } },
+          },
+        },
+      },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     return lesson;
@@ -108,7 +132,7 @@ export class LessonsService {
   async markComplete(courseId: string, lessonId: string, learnerId: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { module: true },
+      select: { module: { select: { courseId: true } } },
     });
     if (!lesson || lesson.module.courseId !== courseId) {
       throw new NotFoundException('Lesson not found in this course');
@@ -116,6 +140,7 @@ export class LessonsService {
 
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { learnerId_courseId: { learnerId, courseId } },
+      select: { id: true },
     });
     if (!enrollment) {
       throw new ForbiddenException('You must be enrolled in this course');
@@ -136,7 +161,10 @@ export class LessonsService {
 
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      include: { trainers: true },
+      select: {
+        createdById: true,
+        trainers: { select: { trainerId: true } },
+      },
     });
     if (!course) throw new NotFoundException('Course not found');
 

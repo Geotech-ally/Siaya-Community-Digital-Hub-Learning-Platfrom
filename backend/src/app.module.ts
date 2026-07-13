@@ -8,6 +8,7 @@ import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 
 import { AuthModule } from './auth/auth.module';
+import { PublicModule } from './public/public.module';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { LessonsModule } from './lessons/lessons.module';
@@ -18,6 +19,7 @@ import { ProgressModule } from './progress/progress.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditModule } from './audit/audit.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { AiModule } from './ai/ai.module';
@@ -36,6 +38,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     QueueModule,
 
     // Core API + Integration Layer
+    PublicModule,
     AuthModule,
     UsersModule,
     CoursesModule,
@@ -47,6 +50,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     CertificatesModule,
     NotificationsModule,
     AnalyticsModule,
+    DashboardModule,
     AuditModule,
     IntegrationsModule,
     AiModule,

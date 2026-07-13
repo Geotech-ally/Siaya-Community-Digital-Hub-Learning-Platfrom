@@ -50,7 +50,7 @@ export class AssignmentsService {
     actorId: string,
     actorRole: Role,
   ) {
-    const assignment = await this.prisma.assignment.findUnique({ where: { id } });
+    const assignment = await this.prisma.assignment.findUnique({ where: { id }, select: { courseId: true } });
     if (!assignment) throw new NotFoundException('Assignment not found');
     await this.assertCourseAccess(assignment.courseId, actorId, actorRole);
 
@@ -66,7 +66,7 @@ export class AssignmentsService {
   }
 
   async remove(id: string, actorId: string, actorRole: Role) {
-    const assignment = await this.prisma.assignment.findUnique({ where: { id } });
+    const assignment = await this.prisma.assignment.findUnique({ where: { id }, select: { courseId: true } });
     if (!assignment) throw new NotFoundException('Assignment not found');
     await this.assertCourseAccess(assignment.courseId, actorId, actorRole);
 
@@ -76,12 +76,14 @@ export class AssignmentsService {
   }
 
   async submit(assignmentId: string, dto: SubmitAssignmentDto, learnerId: string) {
-    const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
+    const [assignment, existing] = await Promise.all([
+      this.prisma.assignment.findUnique({ where: { id: assignmentId }, select: { id: true, dueDate: true } }),
+      this.prisma.assignmentSubmission.findUnique({
+        where: { assignmentId_learnerId: { assignmentId, learnerId } },
+        select: { id: true },
+      }),
+    ]);
     if (!assignment) throw new NotFoundException('Assignment not found');
-
-    const existing = await this.prisma.assignmentSubmission.findUnique({
-      where: { assignmentId_learnerId: { assignmentId, learnerId } },
-    });
     if (existing) throw new ConflictException('Assignment already submitted');
 
     const isLate = assignment.dueDate ? new Date() > assignment.dueDate : false;
@@ -108,7 +110,7 @@ export class AssignmentsService {
   async grade(submissionId: string, dto: GradeAssignmentDto, actorId: string, actorRole: Role) {
     const submission = await this.prisma.assignmentSubmission.findUnique({
       where: { id: submissionId },
-      include: { assignment: true },
+      select: { assignment: { select: { courseId: true } } },
     });
     if (!submission) throw new NotFoundException('Submission not found');
     await this.assertCourseAccess(submission.assignment.courseId, actorId, actorRole);
@@ -153,14 +155,28 @@ export class AssignmentsService {
     actorRole: Role,
     params?: { page?: number; pageSize?: number },
   ) {
-    const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
+    const assignment = await this.prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      select: { id: true, courseId: true, title: true, description: true, dueDate: true, maxScore: true, createdAt: true, updatedAt: true },
+    });
     if (!assignment) throw new NotFoundException('Assignment not found');
     await this.assertCourseAccess(assignment.courseId, actorId, actorRole);
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.assignmentSubmission.findMany({
         where: { assignmentId },
-        include: { learner: { select: { id: true, firstName: true, lastName: true, email: true } } },
+        select: {
+          id: true,
+          assignmentId: true,
+          learnerId: true,
+          content: true,
+          status: true,
+          score: true,
+          feedback: true,
+          submittedAt: true,
+          gradedAt: true,
+          learner: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
         orderBy: { submittedAt: 'desc' },
         skip: ((params?.page || 1) - 1) * (params?.pageSize || 20),
         take: params?.pageSize || 20,
@@ -186,7 +202,10 @@ export class AssignmentsService {
     }
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      include: { trainers: true },
+      select: {
+        createdById: true,
+        trainers: { select: { trainerId: true } },
+      },
     });
     if (!course) throw new NotFoundException('Course not found');
     const isAssigned = course.createdById === actorId || course.trainers.some((trainer) => trainer.trainerId === actorId);

@@ -8,11 +8,7 @@ export class UpdateUserStatusDto {
 export class UpdateUserProfileDto {
   @IsOptional()
   @IsString()
-  firstName?: string;
-
-  @IsOptional()
-  @IsString()
-  lastName?: string;
+  fullName?: string;
 
   @IsOptional()
   @IsEmail()

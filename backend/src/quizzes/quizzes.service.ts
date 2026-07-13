@@ -41,7 +41,16 @@ export class QuizzesService {
             }
           : undefined,
       },
-      include: { questions: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        courseId: true,
+        passMark: true,
+        createdAt: true,
+        updatedAt: true,
+        questions: { select: { id: true, text: true, type: true, options: true, correctAnswer: true, points: true, order: true } },
+      },
     });
 
     await this.auditService.log({ actorId, action: 'CREATE', entity: 'Quiz', entityId: quiz.id });
@@ -49,7 +58,7 @@ export class QuizzesService {
   }
 
   async update(id: string, dto: UpdateQuizDto, actorId: string, actorRole: Role) {
-    const quiz = await this.prisma.quiz.findUnique({ where: { id } });
+    const quiz = await this.prisma.quiz.findUnique({ where: { id }, select: { courseId: true } });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.assertCourseAccess(quiz.courseId, actorId, actorRole);
 
@@ -65,7 +74,7 @@ export class QuizzesService {
   }
 
   async remove(id: string, actorId: string, actorRole: Role) {
-    const quiz = await this.prisma.quiz.findUnique({ where: { id } });
+    const quiz = await this.prisma.quiz.findUnique({ where: { id }, select: { courseId: true } });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.assertCourseAccess(quiz.courseId, actorId, actorRole);
 
@@ -78,13 +87,22 @@ export class QuizzesService {
   async findOneForLearner(id: string) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id },
-      include: { questions: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        courseId: true,
+        passMark: true,
+        createdAt: true,
+        updatedAt: true,
+        questions: { select: { id: true, text: true, type: true, options: true, points: true, order: true } },
+      },
     });
     if (!quiz) throw new NotFoundException('Quiz not found');
 
     return {
       ...quiz,
-      questions: quiz.questions.map(({ correctAnswer, ...q }) => q),
+      questions: quiz.questions,
       passingScorePercent: quiz.passMark,
     };
   }
@@ -93,7 +111,16 @@ export class QuizzesService {
   async findOneForStaff(id: string, actorId: string, actorRole: Role) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id },
-      include: { questions: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        courseId: true,
+        passMark: true,
+        createdAt: true,
+        updatedAt: true,
+        questions: { select: { id: true, text: true, type: true, options: true, correctAnswer: true, points: true, order: true } },
+      },
     });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.assertCourseAccess(quiz.courseId, actorId, actorRole);
@@ -109,7 +136,11 @@ export class QuizzesService {
   async submit(quizId: string, dto: SubmitQuizDto, learnerId: string) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
-      include: { questions: true },
+      select: {
+        id: true,
+        passMark: true,
+        questions: { select: { id: true, correctAnswer: true, points: true } },
+      },
     });
     if (!quiz) throw new NotFoundException('Quiz not found');
 
@@ -157,13 +188,22 @@ export class QuizzesService {
 
   // Trainer: review learner submissions for assigned course quizzes
   async findSubmissionsForQuiz(quizId: string, actorId: string, actorRole: Role) {
-    const quiz = await this.prisma.quiz.findUnique({ where: { id: quizId } });
+    const quiz = await this.prisma.quiz.findUnique({ where: { id: quizId }, select: { courseId: true } });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.assertCourseAccess(quiz.courseId, actorId, actorRole);
 
     return this.prisma.quizSubmission.findMany({
       where: { quizId },
-      include: { learner: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      select: {
+        id: true,
+        quizId: true,
+        learnerId: true,
+        answers: true,
+        score: true,
+        passed: true,
+        submittedAt: true,
+        learner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
       orderBy: { submittedAt: 'desc' },
     });
   }
@@ -185,7 +225,10 @@ export class QuizzesService {
     }
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      include: { trainers: true },
+      select: {
+        createdById: true,
+        trainers: { select: { trainerId: true } },
+      },
     });
     if (!course) throw new NotFoundException('Course not found');
     const isAssigned =

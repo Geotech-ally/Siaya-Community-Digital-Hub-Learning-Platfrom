@@ -15,6 +15,7 @@ export class NotificationsService {
   async create(userId: string, type: NotificationType, title: string, message: string) {
     const notification = await this.prisma.notification.create({
       data: { userId, type, title, message },
+      select: { id: true, userId: true, type: true, title: true, message: true, isRead: true, createdAt: true },
     });
 
     // Queue an async email job (handled by Notifications processor / Integrations module)
@@ -43,9 +44,11 @@ export class NotificationsService {
       ),
     );
 
-    for (const e of enrollments) {
-      await this.emailQueue.add('send-notification-email', { userId: e.learnerId, title, message });
-    }
+    await Promise.all(
+      enrollments.map((e) =>
+        this.emailQueue.add('send-notification-email', { userId: e.learnerId, title, message }),
+      ),
+    );
 
     return notifications;
   }
@@ -53,6 +56,7 @@ export class NotificationsService {
   async findMine(userId: string) {
     return this.prisma.notification.findMany({
       where: { userId },
+      select: { id: true, type: true, title: true, message: true, isRead: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -74,14 +78,19 @@ export class NotificationsService {
   // Announcements: platform-wide or per-course visible messages
   async listAnnouncements(params: { courseId?: string; page?: number; pageSize?: number }) {
     const where = params.courseId ? { courseId: params.courseId } : { courseId: null };
-    const announcements = await this.prisma.announcement.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: ((params.page || 1) - 1) * (params.pageSize || 20),
-      take: params.pageSize || 20,
-    });
-    const total = await this.prisma.announcement.count({ where });
-    return { data: announcements, total, page: params.page || 1, pageSize: params.pageSize || 20 };
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 20;
+    const [announcements, total] = await this.prisma.$transaction([
+      this.prisma.announcement.findMany({
+        where,
+        select: { id: true, title: true, body: true, courseId: true, createdBy: true, createdAt: true, updatedAt: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.announcement.count({ where }),
+    ]);
+    return { data: announcements, total, page, pageSize };
   }
 
   async createAnnouncement(data: { title: string; body: string; courseId?: string }, actorId: string) {
@@ -114,7 +123,7 @@ export class NotificationsService {
   }
 
   async removeAnnouncement(id: string) {
-    const announcement = await this.prisma.announcement.findUnique({ where: { id } });
+    const announcement = await this.prisma.announcement.findUnique({ where: { id }, select: { id: true } });
     if (!announcement) throw new NotFoundException('Announcement not found');
 
     await this.prisma.announcement.delete({ where: { id } });

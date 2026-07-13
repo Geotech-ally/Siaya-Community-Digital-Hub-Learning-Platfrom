@@ -1,7 +1,6 @@
-import { PrismaClient, Role, CourseStatus, Department } from '@prisma/client';
+import { Role, CourseStatus, Department } from '@prisma/client';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@sicodihub.ac.ke';

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -18,6 +19,26 @@ interface AuthTokens {
   refreshToken: string;
 }
 
+type UserForAuth = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  isActive: boolean;
+  createdAt: Date;
+  passwordHash?: string;
+  refreshToken?: string | null;
+};
+
+function splitName(name: string) {
+  const [firstName, ...rest] = name.trim().split(/\s+/);
+  return {
+    firstName,
+    lastName: rest.join(' ') || firstName,
+  };
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -28,14 +49,17 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { id: true } });
     if (existing) {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const [firstName, ...rest] = dto.fullName.trim().split(/\s+/);
-    const lastName = rest.join(' ') || firstName;
+    const name = (dto.name ?? dto.fullName)?.trim();
+    if (!name) {
+      throw new BadRequestException('Name is required');
+    }
 
+    const { firstName, lastName } = splitName(name);
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.user.create({
@@ -46,22 +70,31 @@ export class AuthService {
         lastName,
         role: Role.LEARNER,
       },
+      select: this.safeUserSelect(),
     });
 
-    await this.auditService.log({
-      actorId: user.id,
-      action: 'CREATE',
-      entity: 'User',
-      entityId: user.id,
-      metadata: { selfRegistered: true, role: Role.LEARNER },
-    });
+    this.auditService
+      .log({
+        actorId: user.id,
+        action: 'CREATE',
+        entity: 'User',
+        entityId: user.id,
+        metadata: { selfRegistered: true, role: Role.LEARNER },
+      })
+      .catch((error) => console.error('[REGISTER_AUDIT_LOG_ERROR]', error));
 
     const tokens = await this.issueTokens(user.id, user.role, user.email);
     return { ...tokens, user: this.sanitize(user) };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: {
+        ...this.safeUserSelect(),
+        passwordHash: true,
+      },
+    });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -88,7 +121,13 @@ export class AuthService {
   }
 
   async refresh(userId: string, providedRefreshToken: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        ...this.safeUserSelect(),
+        refreshToken: true,
+      },
+    });
     if (!user || !user.refreshToken) {
       throw new UnauthorizedException('Access denied');
     }
@@ -140,11 +179,23 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private sanitize(user: { id: string; email: string; firstName: string; lastName: string; role: Role; isActive: boolean; createdAt: Date }) {
-    const { passwordHash: _omit, refreshToken: _omit2, ...safe } = user as any;
+  private safeUserSelect() {
+    return {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+    } as const;
+  }
+
+  private sanitize(user: UserForAuth) {
+    const { passwordHash: _passwordHash, refreshToken: _refreshToken, firstName, lastName, ...safe } = user;
     return {
       ...safe,
-      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      fullName: `${firstName} ${lastName}`.trim(),
     };
   }
 }

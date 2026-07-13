@@ -9,13 +9,14 @@ export class ProgressService {
   async markComplete(courseId: string, lessonId: string, learnerId: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { module: true },
+      select: { module: { select: { courseId: true } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     if (lesson.module.courseId !== courseId) throw new NotFoundException('Lesson does not belong to this course');
 
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { learnerId_courseId: { learnerId, courseId } },
+      select: { id: true },
     });
     if (!enrollment) throw new ForbiddenException('You must be enrolled in this course');
 
@@ -62,7 +63,7 @@ export class ProgressService {
   async myProgress(learnerId: string) {
     const enrollments = await this.prisma.enrollment.findMany({
       where: { learnerId },
-      include: { course: { select: { id: true, title: true } } },
+      select: { course: { select: { id: true, title: true } } },
     });
 
     if (enrollments.length === 0) return [];
@@ -116,7 +117,10 @@ export class ProgressService {
     if (actorRole === Role.TRAINER) {
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
-        include: { trainers: true },
+        select: {
+          createdById: true,
+          trainers: { select: { trainerId: true } },
+        },
       });
       if (!course) throw new NotFoundException('Course not found');
       const isAssigned =

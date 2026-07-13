@@ -3,8 +3,26 @@ import bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrainerDto } from './dto/create-trainer.dto';
-import { UpdateUserStatusDto, UpdateUserProfileDto } from './dto/update-user.dto';
+import { UpdateUserStatusDto } from './dto/update-user.dto';
 import { AuditService } from '../audit/audit.service';
+
+function splitName(name: string) {
+  const [firstName, ...rest] = name.trim().split(/\s+/);
+  return {
+    firstName,
+    lastName: rest.join(' ') || firstName,
+  };
+}
+
+type SafeUserRecord = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  isActive: boolean;
+  createdAt: Date;
+};
 
 @Injectable()
 export class UsersService {
@@ -14,13 +32,12 @@ export class UsersService {
   ) {}
 
   async create(dto: { fullName: string; email: string; password: string; role: Role }, adminId: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { id: true } });
     if (existing) {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const [firstName, ...rest] = dto.fullName.trim().split(/\s+/);
-    const lastName = rest.join(' ') || firstName;
+    const { firstName, lastName } = splitName(dto.fullName);
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.user.create({
@@ -32,6 +49,7 @@ export class UsersService {
         role: dto.role,
         createdByAdminId: adminId,
       },
+      select: this.safeUserSelect(),
     });
 
     await this.auditService.log({
@@ -46,13 +64,12 @@ export class UsersService {
   }
 
   async createTrainer(dto: CreateTrainerDto, adminId: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { id: true } });
     if (existing) {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const [firstName, ...rest] = dto.fullName.trim().split(/\s+/);
-    const lastName = rest.join(' ') || firstName;
+    const { firstName, lastName } = splitName(dto.fullName);
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const trainer = await this.prisma.user.create({
@@ -64,6 +81,7 @@ export class UsersService {
         role: Role.TRAINER,
         createdByAdminId: adminId,
       },
+      select: this.safeUserSelect(),
     });
 
     await this.auditService.log({
@@ -90,15 +108,7 @@ export class UsersService {
 
     const users = await this.prisma.user.findMany({
       where,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: this.safeUserSelect(),
       orderBy: { createdAt: 'desc' },
     });
     return users.map(this.sanitize);
@@ -107,29 +117,20 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: this.safeUserSelect(),
     });
     if (!user) throw new NotFoundException('User not found');
     return this.sanitize(user);
   }
 
-  async update(id: string, data: { firstName?: string; lastName?: string; email?: string; role?: Role; isActive?: boolean }) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async update(id: string, data: { fullName?: string; email?: string; role?: Role; isActive?: boolean }) {
+    const user = await this.prisma.user.findUnique({ where: { id }, select: { id: true, email: true } });
     if (!user) throw new NotFoundException('User not found');
 
     const updateData: any = {};
-    if (data.firstName !== undefined) updateData.firstName = data.firstName;
-    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.fullName !== undefined) Object.assign(updateData, splitName(data.fullName));
     if (data.email !== undefined && data.email !== user.email) {
-      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email }, select: { id: true } });
       if (existing) throw new ConflictException('An account with this email already exists');
       updateData.email = data.email;
     }
@@ -139,6 +140,7 @@ export class UsersService {
     const updated = await this.prisma.user.update({
       where: { id },
       data: updateData,
+      select: this.safeUserSelect(),
     });
 
     await this.auditService.log({
@@ -152,7 +154,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.user.delete({ where: { id } });
@@ -175,14 +177,14 @@ export class UsersService {
     return this.setActiveStatus(id, { isActive: false }, adminId);
   }
 
-  // Admin: activate / deactivate any user
   async setActiveStatus(id: string, dto: UpdateUserStatusDto, adminId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) throw new NotFoundException('User not found');
 
     const updated = await this.prisma.user.update({
       where: { id },
       data: { isActive: dto.isActive },
+      select: this.safeUserSelect(),
     });
 
     await this.auditService.log({
@@ -201,21 +203,24 @@ export class UsersService {
 
   async updateOwnProfile(
     userId: string,
-    data: { firstName?: string; lastName?: string; email?: string },
+    data: { fullName?: string; email?: string },
   ) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
     if (!user) throw new NotFoundException('User not found');
 
     const updateData: { firstName?: string; lastName?: string; email?: string } = {};
-    if (data.firstName !== undefined) updateData.firstName = data.firstName;
-    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.fullName !== undefined) Object.assign(updateData, splitName(data.fullName));
     if (data.email !== undefined && data.email !== user.email) {
-      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email }, select: { id: true } });
       if (existing) throw new ConflictException('An account with this email already exists');
       updateData.email = data.email;
     }
 
-    const updated = await this.prisma.user.update({ where: { id: userId }, data: updateData });
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: this.safeUserSelect(),
+    });
     await this.auditService.log({
       actorId: userId,
       action: 'UPDATE',
@@ -227,11 +232,23 @@ export class UsersService {
     return this.sanitize(updated);
   }
 
-  private sanitize(user: { id: string; email: string; firstName: string; lastName: string; role: Role; isActive: boolean; createdAt: Date }) {
-    const { passwordHash: _omit, refreshToken: _omit2, ...safe } = user as any;
+  private safeUserSelect() {
+    return {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+    } as const;
+  }
+
+  private sanitize(user: SafeUserRecord) {
+    const { firstName, lastName, ...safe } = user;
     return {
       ...safe,
-      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      fullName: `${firstName} ${lastName}`.trim(),
     };
   }
 }

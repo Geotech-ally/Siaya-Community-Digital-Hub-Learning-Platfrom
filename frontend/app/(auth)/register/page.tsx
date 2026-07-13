@@ -25,7 +25,7 @@ export default function RegisterPage() {
 
   async function onSubmit(values: RegisterFormValues) {
     const user = await registerUser({
-      fullName: values.fullName,
+      name: values.fullName,
       email: values.email,
       password: values.password,
     }).catch(() => null);
@@ -39,7 +39,7 @@ export default function RegisterPage() {
       <p className="mt-1 text-sm text-ink-500">Take control of your learning journey.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-4">
-        <Input label="Full name" placeholder="Jane Doe" error={errors.fullName?.message} {...register('fullName')} />
+        <Input label="Full name" placeholder="Jane Wafula" error={errors.fullName?.message} {...register('fullName')} />
         <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
         <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
         <Input

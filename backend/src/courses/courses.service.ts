@@ -75,15 +75,30 @@ export class CoursesService {
 
     const courses = await this.prisma.course.findMany({
       where,
-      include: {
-        category: true,
-        trainers: { include: { trainer: { select: { id: true, firstName: true, lastName: true, email: true } } } },
-        _count: { select: { enrollments: true, modules: light ? undefined : true } },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        department: true,
+        status: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        category: { select: { id: true, name: true, slug: true } },
+        trainers: {
+          select: {
+            trainer: { select: { id: true, firstName: true, lastName: true, email: true } },
+          },
+        },
+        _count: { select: { enrollments: true, modules: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     if (light) {
+      if (courses.length === 0) return [];
+
       const lessonCounts = await this.prisma.$queryRaw<{ courseId: string; count: bigint }[]>`
         SELECT m."courseId" AS "courseId", COUNT(l.id) AS "count"
         FROM modules m
@@ -114,10 +129,34 @@ export class CoursesService {
   async findOne(id: string) {
     const course = await this.prisma.course.findUnique({
       where: { id },
-      include: {
-        category: true,
-        modules: { include: { lessons: true }, orderBy: { order: 'asc' } },
-        trainers: { include: { trainer: { select: { id: true, firstName: true, lastName: true, email: true } } } },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        department: true,
+        status: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        category: { select: { id: true, name: true, slug: true } },
+        modules: {
+          select: {
+            id: true,
+            title: true,
+            order: true,
+            lessons: {
+              select: { id: true, title: true, videoUrl: true, order: true },
+              orderBy: { order: 'asc' },
+            },
+          },
+          orderBy: { order: 'asc' },
+        },
+        trainers: {
+          select: {
+            trainer: { select: { id: true, firstName: true, lastName: true, email: true } },
+          },
+        },
         _count: { select: { enrollments: true, modules: true } },
       },
     });
@@ -214,7 +253,10 @@ export class CoursesService {
 
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      include: { trainers: true },
+      select: {
+        createdById: true,
+        trainers: { select: { trainerId: true } },
+      },
     });
     if (!course) throw new NotFoundException('Course not found');
 

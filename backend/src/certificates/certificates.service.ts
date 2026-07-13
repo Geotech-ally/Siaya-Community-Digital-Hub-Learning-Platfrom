@@ -15,6 +15,7 @@ export class CertificatesService {
   async issue(learnerId: string, courseId: string, actorId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { learnerId_courseId: { learnerId, courseId } },
+      select: { id: true, status: true },
     });
     if (!enrollment) throw new NotFoundException('Enrollment not found');
     if (enrollment.status !== 'COMPLETED') {
@@ -23,6 +24,7 @@ export class CertificatesService {
 
     const existing = await this.prisma.certificate.findUnique({
       where: { learnerId_courseId: { learnerId, courseId } },
+      select: { id: true, learnerId: true, courseId: true, certificateNo: true, issuedAt: true, fileUrl: true },
     });
     if (existing) return existing;
 
@@ -46,7 +48,7 @@ export class CertificatesService {
   async myCertificates(learnerId: string) {
     return this.prisma.certificate.findMany({
       where: { learnerId },
-      include: { course: { select: { id: true, title: true } } },
+      select: { id: true, certificateNo: true, issuedAt: true, fileUrl: true, course: { select: { id: true, title: true } } },
       orderBy: { issuedAt: 'desc' },
     });
   }
@@ -54,7 +56,11 @@ export class CertificatesService {
   // Admin: manage/view all certificates
   async findAll() {
     return this.prisma.certificate.findMany({
-      include: {
+      select: {
+        id: true,
+        certificateNo: true,
+        issuedAt: true,
+        fileUrl: true,
         learner: { select: { id: true, firstName: true, lastName: true, email: true } },
         course: { select: { id: true, title: true } },
       },
@@ -65,7 +71,16 @@ export class CertificatesService {
   async findOne(id: string, actorId: string, actorRole: Role) {
     const certificate = await this.prisma.certificate.findUnique({
       where: { id },
-      include: { course: true, learner: { select: { id: true, firstName: true, lastName: true } } },
+      select: {
+        id: true,
+        learnerId: true,
+        courseId: true,
+        certificateNo: true,
+        issuedAt: true,
+        fileUrl: true,
+        course: { select: { id: true, title: true, slug: true } },
+        learner: { select: { id: true, firstName: true, lastName: true } },
+      },
     });
     if (!certificate) throw new NotFoundException('Certificate not found');
 
@@ -79,7 +94,16 @@ export class CertificatesService {
   async download(id: string, actorId: string, actorRole: Role) {
     const certificate = await this.prisma.certificate.findUnique({
       where: { id },
-      include: { course: true, learner: { select: { id: true, firstName: true, lastName: true } } },
+      select: {
+        id: true,
+        learnerId: true,
+        courseId: true,
+        certificateNo: true,
+        issuedAt: true,
+        fileUrl: true,
+        course: { select: { id: true, title: true, slug: true } },
+        learner: { select: { id: true, firstName: true, lastName: true } },
+      },
     });
     if (!certificate) throw new NotFoundException('Certificate not found');
 

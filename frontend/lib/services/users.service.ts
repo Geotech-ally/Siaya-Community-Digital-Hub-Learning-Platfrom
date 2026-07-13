@@ -25,6 +25,6 @@ export const usersService = {
 
   remove: (id: string) => api.delete(`/users/${id}`).then((r) => r.data),
 
-  updateMe: (payload: { firstName?: string; lastName?: string; email?: string }) =>
+  updateMe: (payload: { fullName?: string; email?: string }) =>
     api.patch<User>('/users/me', payload).then((r) => r.data),
 };

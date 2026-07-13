@@ -7,42 +7,37 @@ export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async platform() {
-    const [totalUsers, totalTrainers, totalLearners, totalCourses, totalEnrollments, enrollmentsByDepartment] =
-      await Promise.all([
-        this.prisma.user.count(),
-        this.prisma.user.count({ where: { role: Role.TRAINER } }),
-        this.prisma.user.count({ where: { role: Role.LEARNER } }),
-        this.prisma.course.count(),
-        this.prisma.enrollment.count(),
-        this.prisma.$queryRaw<
-          { department: string; count: number }[]
-        >`
-          SELECT c.department AS "department", COUNT(e.id) AS "count"
-          FROM courses c
-          LEFT JOIN enrollments e ON e."courseId" = c.id
-          GROUP BY c.department
-          ORDER BY "count" DESC
-        `,
-      ]);
-
-    const completed = await this.prisma.enrollment.count({
-      where: { status: EnrollmentStatus.COMPLETED },
-    });
-    const completionRate = totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 100) : 0;
-
-    const enrollmentsByDepartmentClean = enrollmentsByDepartment
-      .filter((d) => d.department !== null)
-      .map((d) => ({ department: d.department, count: Number(d.count) }));
-
-    const enrollmentsOverTime = await this.prisma.$queryRaw<
-      { date: string; count: number }[]
-    >`
-      SELECT DATE(enrolled_at) as date, COUNT(*) as count
-      FROM enrollments
-      GROUP BY DATE(enrolled_at)
-      ORDER BY date DESC
-      LIMIT 30
-    `;
+    const [
+      totalUsers,
+      totalTrainers,
+      totalLearners,
+      totalCourses,
+      totalEnrollments,
+      completed,
+      enrollmentsByDepartment,
+      enrollmentsOverTime,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { role: Role.TRAINER } }),
+      this.prisma.user.count({ where: { role: Role.LEARNER } }),
+      this.prisma.course.count(),
+      this.prisma.enrollment.count(),
+      this.prisma.enrollment.count({ where: { status: EnrollmentStatus.COMPLETED } }),
+      this.prisma.$queryRaw<{ department: string; count: bigint }[]>`
+        SELECT c.department AS "department", COUNT(e.id) AS "count"
+        FROM courses c
+        LEFT JOIN enrollments e ON e."courseId" = c.id
+        GROUP BY c.department
+        ORDER BY "count" DESC
+      `,
+      this.prisma.$queryRaw<{ date: Date; count: bigint }[]>`
+        SELECT DATE("enrolledAt") AS "date", COUNT(*) AS "count"
+        FROM enrollments
+        GROUP BY DATE("enrolledAt")
+        ORDER BY "date" DESC
+        LIMIT 30
+      `,
+    ]);
 
     return {
       totalUsers,
@@ -50,9 +45,14 @@ export class AnalyticsService {
       totalLearners,
       totalCourses,
       totalEnrollments,
-      completionRate,
-      enrollmentsByDepartment: enrollmentsByDepartmentClean,
-      enrollmentsOverTime: enrollmentsOverTime.reverse(),
+      completionRate: totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 100) : 0,
+      enrollmentsByDepartment: enrollmentsByDepartment.map((d) => ({
+        department: d.department,
+        count: Number(d.count),
+      })),
+      enrollmentsOverTime: enrollmentsOverTime
+        .map((d) => ({ date: d.date, count: Number(d.count) }))
+        .reverse(),
     };
   }
 
@@ -65,79 +65,82 @@ export class AnalyticsService {
       return this.trainer(userId);
     }
 
-    return {
-      totalCourses: 0,
-      totalEnrollments: 0,
-      completionRate: 0,
-      enrollmentsByDepartment: [],
-      enrollmentsOverTime: [],
-    };
+    return this.userActivity(userId);
   }
 
   async trainer(userId: string) {
     const trainerCourses = await this.prisma.course.findMany({
-      where: { createdById: userId },
-      include: {
-        enrollments: true,
-        quizzes: { include: { submissions: true } },
+      where: {
+        OR: [
+          { createdById: userId },
+          { trainers: { some: { trainerId: userId } } },
+        ],
       },
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const totalCourses = trainerCourses.length;
-    const totalLearners = trainerCourses.reduce(
-      (sum, c) => sum + c.enrollments.length,
-      0,
-    );
-
-    const allEnrollments = trainerCourses.flatMap((c) => c.enrollments);
-    const completedCount = allEnrollments.filter(
-      (e) => e.status === EnrollmentStatus.COMPLETED,
-    ).length;
-    const averageCompletionRate =
-      totalCourses > 0
-        ? Math.round(trainerCourses.reduce((sum, c) => {
-            const total = c.enrollments.length;
-            const completed = c.enrollments.filter(
-              (e) => e.status === EnrollmentStatus.COMPLETED,
-            ).length;
-            return sum + (total > 0 ? Math.round((completed / total) * 100) : 0);
-          }, 0) / totalCourses)
-        : 0;
-
-    const allQuizSubmissions = trainerCourses.flatMap((c) =>
-      c.quizzes.flatMap((q) => q.submissions),
-    );
-    const passedQuizSubmissions = allQuizSubmissions.filter((s) => s.passed).length;
-    const averageQuizScore =
-      allQuizSubmissions.length > 0
-        ? Math.round(
-            (passedQuizSubmissions / allQuizSubmissions.length) * 100,
-          )
-        : 0;
-
-    const courseBreakdown = trainerCourses.map((c) => {
-      const total = c.enrollments.length;
-      const completed = c.enrollments.filter(
-        (e) => e.status === EnrollmentStatus.COMPLETED,
-      ).length;
+    const courseIds = trainerCourses.map((course) => course.id);
+    if (courseIds.length === 0) {
       return {
-        courseId: c.id,
-        courseTitle: c.title,
-        learners: total,
-        completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+        totalCourses: 0,
+        totalLearners: 0,
+        averageCompletionRate: 0,
+        averageQuizScore: 0,
+        courseBreakdown: [],
+      };
+    }
+
+    const [completedByCourse, totalQuizSubmissions, passedQuizSubmissions, quizScore] = await Promise.all([
+      this.prisma.enrollment.groupBy({
+        by: ['courseId'],
+        where: { courseId: { in: courseIds }, status: EnrollmentStatus.COMPLETED },
+        _count: { _all: true },
+      }),
+      this.prisma.quizSubmission.count({ where: { quiz: { courseId: { in: courseIds } } } }),
+      this.prisma.quizSubmission.count({ where: { quiz: { courseId: { in: courseIds } }, passed: true } }),
+      this.prisma.quizSubmission.aggregate({
+        where: { quiz: { courseId: { in: courseIds } }, score: { not: null } },
+        _avg: { score: true },
+      }),
+    ]);
+
+    const completedMap = new Map(completedByCourse.map((row) => [row.courseId, row._count._all]));
+    const totalLearners = trainerCourses.reduce((sum, course) => sum + course._count.enrollments, 0);
+
+    const courseBreakdown = trainerCourses.map((course) => {
+      const learners = course._count.enrollments;
+      const completed = completedMap.get(course.id) ?? 0;
+
+      return {
+        courseId: course.id,
+        courseTitle: course.title,
+        learners,
+        completionRate: learners > 0 ? Math.round((completed / learners) * 100) : 0,
       };
     });
 
+    const averageCompletionRate =
+      trainerCourses.length > 0
+        ? Math.round(
+            courseBreakdown.reduce((sum, course) => sum + course.completionRate, 0) / trainerCourses.length,
+          )
+        : 0;
+
     return {
-      totalCourses,
+      totalCourses: trainerCourses.length,
       totalLearners,
       averageCompletionRate,
-      averageQuizScore,
+      averageQuizScore: quizScore._avg.score ? Math.round(quizScore._avg.score) : 0,
+      quizPassRate: totalQuizSubmissions > 0 ? Math.round((passedQuizSubmissions / totalQuizSubmissions) * 100) : 0,
       courseBreakdown,
     };
   }
 
-  // Weekly report: enrollments, completions, quiz/assignment submissions in the last 7 days
   async weeklyReport() {
     const since = new Date();
     since.setDate(since.getDate() - 7);
@@ -164,7 +167,6 @@ export class AnalyticsService {
     };
   }
 
-  // User activity summary
   async userActivity(userId: string) {
     const [enrollments, quizSubmissions, assignmentSubmissions, progressRecords] =
       await Promise.all([
@@ -177,30 +179,45 @@ export class AnalyticsService {
     return { userId, enrollments, quizSubmissions, assignmentSubmissions, lessonsCompleted: progressRecords };
   }
 
-  // Course completion rates (per course)
   async courseCompletionRates() {
     const courses = await this.prisma.course.findMany({
-      select: {
-        id: true,
-        title: true,
-        enrollments: { select: { status: true } },
-      },
+      select: { id: true, title: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const courseIds = courses.map((course) => course.id);
+
+    if (courseIds.length === 0) return [];
+
+    const groupedEnrollments = await this.prisma.enrollment.groupBy({
+      by: ['courseId', 'status'],
+      where: { courseId: { in: courseIds } },
+      _count: { _all: true },
     });
 
+    const totals = new Map<string, number>();
+    const completed = new Map<string, number>();
+    for (const row of groupedEnrollments) {
+      totals.set(row.courseId, (totals.get(row.courseId) ?? 0) + row._count._all);
+      if (row.status === EnrollmentStatus.COMPLETED) {
+        completed.set(row.courseId, row._count._all);
+      }
+    }
+
     return courses.map((course) => {
-      const total = course.enrollments.length;
-      const completed = course.enrollments.filter((e) => e.status === EnrollmentStatus.COMPLETED).length;
+      const totalEnrollments = totals.get(course.id) ?? 0;
+      const completedEnrollments = completed.get(course.id) ?? 0;
+
       return {
         courseId: course.id,
         title: course.title,
-        totalEnrollments: total,
-        completed,
-        completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+        totalEnrollments,
+        completed: completedEnrollments,
+        completionRate:
+          totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0,
       };
     });
   }
 
-  // Learner engagement: average lessons completed, quiz pass rate
   async learnerEngagement() {
     const [totalProgress, completedProgress, totalQuizSubmissions, passedQuizSubmissions] =
       await Promise.all([

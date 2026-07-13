@@ -1,14 +1,12 @@
-import { GraduationCap } from 'lucide-react';
 import { PLATFORM_NAME } from '@/lib/brand';
+import { PlatformLogo } from '@/components/layout/PlatformLogo';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20">
         <div className="mb-10 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
+          <PlatformLogo size="sm" priority />
           <span className="font-display text-base font-semibold leading-tight text-ink-900">
             {PLATFORM_NAME}
           </span>

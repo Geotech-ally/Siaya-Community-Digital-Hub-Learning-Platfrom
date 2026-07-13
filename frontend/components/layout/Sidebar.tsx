@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GraduationCap } from 'lucide-react';
 import type { Role } from '@/types';
 import { navByRole, roleLabel } from './navConfig';
 import { PLATFORM_NAME } from '@/lib/brand';
 import { cn } from '@/common/utils/cn';
+import { PlatformLogo } from './PlatformLogo';
 
 export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
@@ -15,9 +15,7 @@ export function Sidebar({ role }: { role: Role }) {
   return (
     <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-ink-900/8 bg-white lg:flex">
       <div className="flex h-16 items-center gap-2 border-b border-ink-900/8 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
-          <GraduationCap className="h-4.5 w-4.5 text-white" />
-        </div>
+        <PlatformLogo size="sm" className="h-8 w-8 rounded-lg" />
         <div>
           <p className="font-display text-[13px] font-semibold leading-tight text-ink-900">
             {PLATFORM_NAME}

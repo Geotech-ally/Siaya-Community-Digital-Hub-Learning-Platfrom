@@ -16,12 +16,15 @@ export class EnrollmentsService {
   }
 
   async enrollByCourseId(courseId: string, learnerId: string) {
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) throw new NotFoundException('Course not found');
+    const [course, existing] = await Promise.all([
+      this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true } }),
+      this.prisma.enrollment.findUnique({
+        where: { learnerId_courseId: { learnerId, courseId } },
+        select: { id: true },
+      }),
+    ]);
 
-    const existing = await this.prisma.enrollment.findUnique({
-      where: { learnerId_courseId: { learnerId, courseId } },
-    });
+    if (!course) throw new NotFoundException('Course not found');
     if (existing) throw new ConflictException('Already enrolled in this course');
 
     const enrollment = await this.prisma.enrollment.create({
@@ -41,6 +44,7 @@ export class EnrollmentsService {
   async unenrollByCourseId(courseId: string, learnerId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { learnerId_courseId: { learnerId, courseId } },
+      select: { id: true },
     });
     if (!enrollment) throw new NotFoundException('Enrollment not found');
 
@@ -70,7 +74,10 @@ export class EnrollmentsService {
     if (actorRole === Role.TRAINER) {
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
-        include: { trainers: true },
+        select: {
+          createdById: true,
+          trainers: { select: { trainerId: true } },
+        },
       });
       if (!course) throw new NotFoundException('Course not found');
       const isAssigned = course.createdById === actorId || course.trainers.some((trainer) => trainer.trainerId === actorId);
@@ -80,6 +87,7 @@ export class EnrollmentsService {
     if (actorRole === Role.LEARNER) {
       const enrollment = await this.prisma.enrollment.findUnique({
         where: { learnerId_courseId: { learnerId: actorId, courseId } },
+        select: { id: true },
       });
       if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
     }
