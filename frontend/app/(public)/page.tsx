@@ -1,7 +1,18 @@
 import Link from 'next/link';
-import { ArrowRight, Award, BookOpen, CheckCircle2, Sparkles, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  Award,
+  BookOpen,
+  CheckCircle2,
+  Sparkles,
+  Users,
+  UserPlus,
+  Layers,
+  PlayCircle,
+  GraduationCap,
+  LogIn,
+} from 'lucide-react';
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '@/lib/brand';
-import { PlatformLogo } from '@/components/layout/PlatformLogo';
 import { DEPARTMENT_LABELS, type Department } from '@/types';
 
 export const revalidate = 300;
@@ -31,6 +42,33 @@ const highlights = [
   'Certificates on completion',
   'Mentor-led practical learning',
   'Community-powered digital skills',
+];
+
+const processSteps = [
+  {
+    step: '01',
+    title: 'Create Account',
+    description: 'Register with your first name, last name, email address, and phone number.',
+    icon: UserPlus,
+  },
+  {
+    step: '02',
+    title: 'Choose a Department',
+    description: 'Browse all departments and pick the track that fits your goals.',
+    icon: Layers,
+  },
+  {
+    step: '03',
+    title: 'Learn at Your Pace',
+    description: 'Watch videos, read modules, complete quizzes and assignments.',
+    icon: PlayCircle,
+  },
+  {
+    step: '04',
+    title: 'Earn Your Certificate',
+    description: 'Pass the final assessment and receive your official Hub certificate.',
+    icon: GraduationCap,
+  },
 ];
 
 const fallbackData: PublicHomeData = {
@@ -67,7 +105,6 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(129,140,248,0.15),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(245,158,11,0.15),transparent_45%)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <PlatformLogo size="xl" priority className="mx-auto" />
             <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-ink-900 sm:text-5xl">
               {PLATFORM_NAME}
             </h1>
@@ -79,6 +116,13 @@ export default async function HomePage() {
               >
                 Enroll Now
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center rounded-lg border border-ink-900/10 bg-white px-6 py-3 text-sm font-semibold text-ink-700 transition-colors hover:bg-surface-subtle"
+              >
+                <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
+                Sign In
               </Link>
               <Link
                 href="/about"
@@ -101,6 +145,34 @@ export default async function HomePage() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">Simple process</h2>
+          <p className="mt-3 text-base text-ink-500">Start learning in minutes</p>
+        </div>
+
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {processSteps.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.step}
+                className="relative rounded-2xl border border-ink-900/8 bg-white p-6 shadow-card"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50">
+                    <Icon className="h-6 w-6 text-brand-600" aria-hidden="true" />
+                  </div>
+                  <span className="font-display text-3xl font-bold text-brand-200">{item.step}</span>
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-500">{item.description}</p>
+              </div>
+            );
+          })}
         </div>
       </section>
 

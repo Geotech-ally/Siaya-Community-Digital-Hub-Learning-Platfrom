@@ -6,6 +6,7 @@ import { PlatformLogo } from './PlatformLogo';
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'About Us', href: '/about' },
+  { label: 'Departments', href: '/departments' },
   { label: 'Contact Us', href: '/contact' },
   { label: 'Enroll Now', href: '/register', cta: true },
 ];
