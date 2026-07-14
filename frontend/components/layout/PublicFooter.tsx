@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PLATFORM_NAME } from '@/lib/brand';
+import { contactDetails, socialLinks } from '@/lib/contact';
 import { PlatformLogo } from './PlatformLogo';
 import { Facebook, Twitter, Instagram, MapPin, Phone, Mail } from 'lucide-react';
 
@@ -20,17 +21,8 @@ const partners = [
   'Kenya Institute of Mass Communication',
 ];
 
-const socialLinks = [
-  { label: 'Facebook', href: '#', icon: Facebook },
-  { label: 'Twitter', href: '#', icon: Twitter },
-  { label: 'Instagram', href: '#', icon: Instagram },
-];
-
-const contactDetails = [
-  { label: 'Location', value: 'Bondo Town, Siaya County, Kenya', icon: MapPin },
-  { label: 'Contact', value: '+254 754 951 128', icon: Phone },
-  { label: 'Email', value: 'info@siayacommunitydigitalhub.or.ke', icon: Mail },
-];
+const socialIcons = { facebook: Facebook, twitter: Twitter, instagram: Instagram };
+const contactIcons = { location: MapPin, phone: Phone, email: Mail };
 
 export function PublicFooter() {
   return (
@@ -48,7 +40,7 @@ export function PublicFooter() {
             </p>
             <ul className="mt-6 flex items-center gap-3">
               {socialLinks.map((item) => {
-                const Icon = item.icon;
+                const Icon = socialIcons[item.type];
                 return (
                   <li key={item.label}>
                     <Link
@@ -65,6 +57,21 @@ export function PublicFooter() {
           </div>
 
           <div>
+            <h3 className="font-display text-sm font-semibold text-white">Contact</h3>
+            <ul className="mt-4 space-y-3">
+              {contactDetails.map((item) => {
+                const Icon = contactIcons[item.type];
+                return (
+                  <li key={item.label} className="flex items-start gap-2.5">
+                    <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-400" aria-hidden="true" />
+                    <span className="text-sm text-ink-300">{item.value}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div>
             <h3 className="font-display text-sm font-semibold text-white">Departments</h3>
             <ul className="mt-4 space-y-2.5">
               {departments.map((item) => (
@@ -74,21 +81,6 @@ export function PublicFooter() {
                   </Link>
                 </li>
               ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-display text-sm font-semibold text-white">Contact</h3>
-            <ul className="mt-4 space-y-3">
-              {contactDetails.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.label} className="flex items-start gap-2.5">
-                    <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-400" aria-hidden="true" />
-                    <span className="text-sm text-ink-300">{item.value}</span>
-                  </li>
-                );
-              })}
             </ul>
           </div>
 
