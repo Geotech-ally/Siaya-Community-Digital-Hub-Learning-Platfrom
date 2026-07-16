@@ -10,6 +10,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
+  /** Feature is planned but not yet implemented — rendered disabled with a "Soon" badge. */
+  comingSoon?: boolean;
 }
 
 export const navByRole: Record<Role, NavItem[]> = {
@@ -33,8 +35,8 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: 'Assignments', href: '/dashboard/trainer/assignments', icon: FileEdit },
     { label: 'Grading', href: '/dashboard/trainer/grading', icon: CheckSquare },
     { label: 'Learner progress', href: '/dashboard/trainer/progress', icon: LineChart },
-    { label: 'Messages', href: '/dashboard/trainer/messages', icon: MessageSquare },
-    { label: 'AI assistant', href: '/dashboard/trainer/ai-assistant', icon: Sparkles },
+    { label: 'Messages', href: '/dashboard/trainer/messages', icon: MessageSquare, comingSoon: true },
+    { label: 'AI assistant', href: '/dashboard/trainer/ai-assistant', icon: Sparkles, comingSoon: true },
   ],
   LEARNER: [
     { label: 'Overview', href: '/dashboard/learner', icon: LayoutDashboard },
@@ -42,7 +44,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: 'My progress', href: '/dashboard/learner/progress', icon: GraduationCap },
     { label: 'Notifications', href: '/dashboard/learner/notifications', icon: Bell },
     { label: 'Certificates', href: '/dashboard/learner/certificates', icon: Award },
-    { label: 'AI assistant', href: '/dashboard/learner/ai-assistant', icon: Sparkles },
+    { label: 'AI assistant', href: '/dashboard/learner/ai-assistant', icon: Sparkles, comingSoon: true },
   ],
 };
 

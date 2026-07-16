@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Table, Thead, Tr, Th, Td } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ComingSoonBadge } from '@/components/ui/ComingSoon';
 import { certificatesService } from '@/lib/services/certificates.service';
 import type { Certificate } from '@/types';
 import { formatDate } from '@/common/utils/format';
@@ -51,14 +52,15 @@ export default function AdminCertificatesPage() {
                 <Td>{c.courseTitle}</Td>
                 <Td>{formatDate(c.issuedAt)}</Td>
                 <Td>
-                  <a
-                    href={c.certificateUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
-                  >
-                    <Download className="h-3.5 w-3.5" /> Download
-                  </a>
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      title="Coming soon"
+                      className="inline-flex cursor-not-allowed items-center gap-1 text-sm font-medium text-ink-300"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </span>
+                    <ComingSoonBadge />
+                  </span>
                 </Td>
               </Tr>
             ))}

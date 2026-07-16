@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ComingSoonBadge } from '@/components/ui/ComingSoon';
 import { certificatesService } from '@/lib/services/certificates.service';
 import type { Certificate } from '@/types';
 import { formatDate } from '@/common/utils/format';
@@ -21,16 +22,6 @@ export default function LearnerCertificatesPage() {
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, []);
-
-  async function download(cert: Certificate) {
-    const { downloadUrl } = await certificatesService.download(cert.id);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = `${cert.courseTitle.replace(/\s+/g, '-')}-certificate.pdf`;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.click();
-  }
 
   if (loading) {
     return (
@@ -61,9 +52,12 @@ export default function LearnerCertificatesPage() {
           </div>
           <p className="font-display text-base font-semibold text-ink-900">{c.courseTitle}</p>
           <p className="text-xs text-ink-500">Issued {formatDate(c.issuedAt)}</p>
-          <Button variant="outline" size="sm" onClick={() => download(c)} className="mt-1 w-fit">
-            <Download className="h-4 w-4" /> Download
-          </Button>
+          <div className="mt-1 flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled title="Coming soon" className="w-fit">
+              <Download className="h-4 w-4" /> Download
+            </Button>
+            <ComingSoonBadge />
+          </div>
         </Card>
       ))}
     </div>

@@ -7,6 +7,7 @@ import { navByRole, roleLabel } from './navConfig';
 import { PLATFORM_NAME } from '@/lib/brand';
 import { cn } from '@/common/utils/cn';
 import { PlatformLogo } from './PlatformLogo';
+import { ComingSoonBadge } from '@/components/ui/ComingSoon';
 
 export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
@@ -27,6 +28,22 @@ export function Sidebar({ role }: { role: Role }) {
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
+
+          if (item.comingSoon) {
+            return (
+              <div
+                key={item.href}
+                aria-disabled="true"
+                title="Coming soon"
+                className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-300"
+              >
+                <Icon className="h-4.5 w-4.5 text-ink-200" />
+                <span>{item.label}</span>
+                <ComingSoonBadge className="ml-auto" />
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}

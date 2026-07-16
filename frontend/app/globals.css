@@ -3,13 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  /* Refined system stacks — no external font dependency, crisp on all platforms */
+  --font-display: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'SF Mono', 'Consolas', ui-monospace, monospace;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  letter-spacing: -0.02em;
 }
 
 body {
@@ -18,6 +25,64 @@ body {
 
 ::selection {
   @apply bg-brand-200 text-brand-900;
+}
+
+@layer utilities {
+  /* Gradient brand text for headline emphasis */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, theme('colors.brand.700'), theme('colors.brand.500') 55%, theme('colors.accent.500'));
+  }
+
+  /* Premium background mesh — subtle, layered radial glows */
+  .bg-mesh {
+    background-image:
+      radial-gradient(60rem 60rem at 10% -10%, rgba(91, 95, 239, 0.12), transparent 55%),
+      radial-gradient(50rem 50rem at 100% 0%, rgba(245, 158, 11, 0.10), transparent 50%),
+      radial-gradient(40rem 40rem at 50% 120%, rgba(67, 56, 202, 0.10), transparent 55%);
+  }
+
+  /* Faint dotted grid overlay */
+  .bg-grid {
+    background-image: radial-gradient(rgba(15, 18, 41, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Frosted glass panel */
+  .glass {
+    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
+  }
+
+  /* Card that lifts on hover */
+  .card-hover {
+    @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lift;
+  }
+
+  /* Antigravity violet gradient text */
+  .text-iris {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #a78bfa, #c4b5fd 40%, #f0abfc);
+  }
+
+  /* Deep-space mesh for dark hero */
+  .bg-void-mesh {
+    background-color: #07060e;
+    background-image:
+      radial-gradient(55rem 55rem at 15% -5%, rgba(124, 58, 237, 0.28), transparent 55%),
+      radial-gradient(45rem 45rem at 95% 5%, rgba(217, 70, 239, 0.16), transparent 50%),
+      radial-gradient(50rem 40rem at 50% 115%, rgba(99, 102, 241, 0.20), transparent 55%);
+  }
+
+  /* Faint light grid for dark surfaces */
+  .bg-grid-dark {
+    background-image: radial-gradient(rgba(196, 181, 253, 0.09) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Frosted glass tuned for dark surfaces */
+  .glass-dark {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-xl;
+  }
 }
 
 /* Visible keyboard focus everywhere */

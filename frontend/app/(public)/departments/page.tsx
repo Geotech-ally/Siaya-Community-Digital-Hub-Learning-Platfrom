@@ -75,8 +75,8 @@ export default function DepartmentsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">Departments</h1>
-        <p className="mt-4 text-lg text-ink-500">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink-900 dark:text-white sm:text-4xl">Departments</h1>
+        <p className="mt-4 text-lg text-ink-500 dark:text-slate-400">
           Browse our departments and discover the courses designed to build practical, job-ready digital skills.
         </p>
       </div>
@@ -85,20 +85,20 @@ export default function DepartmentsPage() {
         {categories.map((category) => (
           <section
             key={category.title}
-            className="rounded-2xl border border-ink-900/8 bg-white p-6 shadow-card sm:p-8"
+            className="rounded-2xl border border-ink-900/8 bg-white dark:border-white/10 dark:bg-white/[0.03] dark:backdrop-blur p-6 shadow-card sm:p-8"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50">
-                <category.icon className="h-6 w-6 text-brand-600" aria-hidden="true" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-iris-500/15">
+                <category.icon className="h-6 w-6 text-brand-600 dark:text-iris-300" aria-hidden="true" />
               </div>
-              <h2 className="font-display text-xl font-semibold text-ink-900 sm:text-2xl">{category.title}</h2>
+              <h2 className="font-display text-xl font-semibold text-ink-900 dark:text-white sm:text-2xl">{category.title}</h2>
             </div>
 
             <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {category.courses.map((course) => (
                 <li
                   key={course}
-                  className="rounded-xl border border-ink-900/8 bg-surface-subtle px-4 py-3 text-sm font-medium text-ink-700"
+                  className="rounded-xl border border-ink-900/8 bg-surface-subtle px-4 py-3 text-sm font-medium text-ink-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300"
                 >
                   {course}
                 </li>

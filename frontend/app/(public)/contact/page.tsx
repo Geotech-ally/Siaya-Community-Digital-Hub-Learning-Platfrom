@@ -9,10 +9,10 @@ export default function ContactPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink-900 dark:text-white sm:text-4xl">
           Get in Touch
         </h1>
-        <p className="mt-4 text-lg text-ink-500">
+        <p className="mt-4 text-lg text-ink-500 dark:text-slate-400">
           We&rsquo;d love to hear from you. Whether you have questions about our courses, need technical support, want to
           partner with us, or have general feedback, our team is here to help. Use the contact information below or send
           us a message through the contact form.
@@ -69,35 +69,35 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-ink-900/8 bg-white p-6 shadow-card sm:p-8">
-          <h2 className="font-display text-2xl font-semibold text-ink-900">Send us a message</h2>
-          <p className="mt-2 text-sm text-ink-500">Fields marked with an asterisk are required.</p>
+        <section className="rounded-2xl border border-ink-900/8 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/[0.03] dark:backdrop-blur dark:shadow-none sm:p-8">
+          <h2 className="font-display text-2xl font-semibold text-ink-900 dark:text-white">Send us a message</h2>
+          <p className="mt-2 text-sm text-ink-500 dark:text-slate-400">Fields marked with an asterisk are required.</p>
           <form className="mt-7 space-y-5">
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-ink-700">Full Name *</label>
-                <input type="text" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500" required />
+                <label className="block text-sm font-medium text-ink-700 dark:text-slate-300">Full Name *</label>
+                <input type="text" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-iris-400" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-700">Email Address *</label>
-                <input type="email" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500" required />
+                <label className="block text-sm font-medium text-ink-700 dark:text-slate-300">Email Address *</label>
+                <input type="email" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-iris-400" required />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-700">Phone Number <span className="font-normal text-ink-500">(optional)</span></label>
-              <input type="tel" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500" />
+              <label className="block text-sm font-medium text-ink-700 dark:text-slate-300">Phone Number <span className="font-normal text-ink-500 dark:text-slate-400">(optional)</span></label>
+              <input type="tel" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-iris-400" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-700">Subject *</label>
-              <input type="text" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500" required />
+              <label className="block text-sm font-medium text-ink-700 dark:text-slate-300">Subject *</label>
+              <input type="text" className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-iris-400" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-700">Message *</label>
-              <textarea rows={5} className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500" required />
+              <label className="block text-sm font-medium text-ink-700 dark:text-slate-300">Message *</label>
+              <textarea rows={5} className="mt-1 w-full rounded-lg border border-ink-900/10 bg-surface px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-iris-400" required />
             </div>
-            <button type="submit" className="inline-flex w-full justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 sm:w-auto">Send Message</button>
+            <button type="submit" className="inline-flex w-full justify-center rounded-lg bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 dark:bg-iris-gradient dark:shadow-glow-iris sm:w-auto">Send Message</button>
           </form>
-          <p className="mt-5 text-sm text-ink-500">We typically respond to inquiries within 24–48 business hours.</p>
+          <p className="mt-5 text-sm text-ink-500 dark:text-slate-400">We typically respond to inquiries within 24–48 business hours.</p>
         </section>
       </div>
     </div>
