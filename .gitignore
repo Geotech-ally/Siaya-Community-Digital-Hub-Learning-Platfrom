@@ -16,6 +16,9 @@ frontend/node_modules/
 backend/dist/
 frontend/.next/
 
+# Local file storage fallback (S3 is used in production)
+backend/storage/
+
 # Environment files
 .env
 .env.*

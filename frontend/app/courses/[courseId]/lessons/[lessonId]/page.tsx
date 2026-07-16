@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CheckCircle2, FileText, Link2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, FileText, Link2, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { AIAssistantPanel } from '@/components/layout/AIAssistantPanel';
 import { lessonsService } from '@/lib/services/lessons.service';
 import type { Lesson } from '@/types';
 
@@ -19,6 +20,7 @@ export default function LessonPlayerPage() {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [showAi, setShowAi] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -59,7 +61,12 @@ export default function LessonPlayerPage() {
           <ArrowLeft className="h-4 w-4" /> Back to course
         </Link>
 
-        <h1 className="mt-4 font-display text-2xl font-semibold text-ink-900">{lesson.title}</h1>
+        <div className="mt-4 flex items-start justify-between gap-4">
+          <h1 className="font-display text-2xl font-semibold text-ink-900">{lesson.title}</h1>
+          <Button variant="outline" size="sm" onClick={() => setShowAi((v) => !v)}>
+            <Sparkles className="h-4 w-4" /> {showAi ? 'Hide AI' : 'Ask AI'}
+          </Button>
+        </div>
 
         {lesson.videoUrl && (
           <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-ink-900">
@@ -86,6 +93,17 @@ export default function LessonPlayerPage() {
                 </a>
               ))}
             </div>
+          </Card>
+        )}
+
+        {showAi && (
+          <Card className="mt-4 p-0">
+            <AIAssistantPanel
+              title="AI Learning Assistant"
+              placeholder="Ask about this lesson…"
+              courseId={courseId}
+              context={lesson.content?.slice(0, 2000)}
+            />
           </Card>
         )}
 

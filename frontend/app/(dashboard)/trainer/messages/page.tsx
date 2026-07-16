@@ -4,119 +4,190 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { enrollmentsService } from '@/lib/services/enrollments.service';
-import { coursesService } from '@/lib/services/courses.service';
-import type { Course, Enrollment } from '@/types';
-
-// Messaging UI. Wire `sendMessage` and the message feed to a real
-// backend endpoint (e.g. REST + websocket, or a messages.service.ts)
-// once that API surface exists on the NestJS side.
-interface ChatMessage {
-  id: string;
-  from: 'me' | 'them';
-  text: string;
-  at: string;
-}
+import { useAuthStore } from '@/store/auth.store';
+import {
+  messagesService,
+  type ChatMessage,
+  type ConversationSummary,
+} from '@/lib/services/messages.service';
+import { formatRelative } from '@/common/utils/format';
 
 export default function TrainerMessagesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [courseId, setCourseId] = useState('');
-  const [learners, setLearners] = useState<Enrollment[]>([]);
-  const [activeLearnerId, setActiveLearnerId] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [courseFilter, setCourseFilter] = useState('');
+  const [active, setActive] = useState<ConversationSummary | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    coursesService.list({ pageSize: 50 }).then((r) => {
-      setCourses(r.data);
-      if (r.data.length) setCourseId(r.data[0].id);
-    });
-  }, []);
+  const courseOptions = Array.from(
+    new Map(conversations.map((c) => [c.courseId, c.courseTitle])).entries(),
+  );
 
   useEffect(() => {
-    if (!courseId) return;
-    enrollmentsService.listByCourse(courseId, { pageSize: 50 }).then((r) => setLearners(r.data));
-  }, [courseId]);
+    messagesService
+      .conversations(courseFilter || undefined)
+      .then(setConversations)
+      .catch(() => setConversations([]));
+  }, [courseFilter]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  function send() {
-    if (!draft.trim() || !activeLearnerId) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: Math.random().toString(36).slice(2), from: 'me', text: draft.trim(), at: new Date().toISOString() },
-    ]);
-    setDraft('');
+  async function openConversation(conversation: ConversationSummary) {
+    setActive(conversation);
+    setLoadingThread(true);
+    try {
+      const thread = await messagesService.thread(conversation.courseId, conversation.counterpartId);
+      setMessages(thread);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.courseId === conversation.courseId && c.counterpartId === conversation.counterpartId
+            ? { ...c, unreadCount: 0 }
+            : c,
+        ),
+      );
+    } catch {
+      setMessages([]);
+    } finally {
+      setLoadingThread(false);
+    }
   }
 
-  const activeLearner = learners.find((l) => l.learnerId === activeLearnerId);
+  async function send() {
+    if (!draft.trim() || !active) return;
+    setSending(true);
+    try {
+      const message = await messagesService.send({
+        courseId: active.courseId,
+        recipientId: active.counterpartId,
+        body: draft.trim(),
+      });
+      setMessages((prev) => [...prev, message]);
+      setDraft('');
+      setConversations((prev) => {
+        const next = prev.map((c) =>
+          c.courseId === active.courseId && c.counterpartId === active.counterpartId
+            ? {
+                ...c,
+                lastMessage: message.body,
+                lastMessageAt: message.createdAt,
+              }
+            : c,
+        );
+        return next.sort((a, b) => {
+          const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+          const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          return bTime - aTime;
+        });
+      });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const filtered = courseFilter
+    ? conversations.filter((c) => c.courseId === courseFilter)
+    : conversations;
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] gap-4">
-      <Card className="w-64 shrink-0 overflow-y-auto p-0">
+      <Card className="w-72 shrink-0 overflow-y-auto p-0">
         <div className="border-b border-ink-900/8 p-3">
           <select
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
+            value={courseFilter}
+            onChange={(e) => {
+              setCourseFilter(e.target.value);
+              setActive(null);
+              setMessages([]);
+            }}
             className="h-9 w-full rounded-lg border border-ink-900/15 px-2 text-sm"
           >
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
+            <option value="">All courses</option>
+            {courseOptions.map(([id, title]) => (
+              <option key={id} value={id}>
+                {title}
               </option>
             ))}
           </select>
         </div>
         <div className="p-1.5">
-          {learners.map((l) => (
-            <button
-              key={l.id}
-              onClick={() => {
-                setActiveLearnerId(l.learnerId);
-                setMessages([]);
-              }}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${
-                activeLearnerId === l.learnerId ? 'bg-brand-50 text-brand-700' : 'text-ink-700 hover:bg-surface-subtle'
-              }`}
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-                {(l.learnerName ?? '?').charAt(0)}
-              </div>
-              {l.learnerName ?? l.learnerId}
-            </button>
-          ))}
+          {filtered.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-ink-500">No learners to message yet.</p>
+          ) : (
+            filtered.map((c) => (
+              <button
+                key={`${c.courseId}-${c.counterpartId}`}
+                onClick={() => openConversation(c)}
+                className={`flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                  active?.counterpartId === c.counterpartId && active?.courseId === c.courseId
+                    ? 'bg-brand-50 text-brand-700'
+                    : 'text-ink-700 hover:bg-surface-subtle'
+                }`}
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+                  {c.counterpartName.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate font-medium">{c.counterpartName}</p>
+                    {c.unreadCount > 0 && (
+                      <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">
+                        {c.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-ink-500">{c.courseTitle}</p>
+                  {c.lastMessage && <p className="mt-0.5 truncate text-xs text-ink-300">{c.lastMessage}</p>}
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </Card>
 
       <Card className="flex flex-1 flex-col p-0">
-        {!activeLearner ? (
+        {!active ? (
           <div className="flex flex-1 items-center justify-center p-6">
-            <EmptyState icon={MessageSquare} title="Select a learner" description="Choose someone from the list to start messaging." />
+            <EmptyState
+              icon={MessageSquare}
+              title="Select a learner"
+              description="Choose someone from the list to start messaging."
+            />
           </div>
         ) : (
           <>
             <div className="border-b border-ink-900/8 px-4 py-3">
-              <p className="font-medium text-ink-900">{activeLearner.learnerName ?? activeLearner.learnerId}</p>
-              <p className="text-xs text-ink-500">{activeLearner.courseTitle}</p>
+              <p className="font-medium text-ink-900">{active.counterpartName}</p>
+              <p className="text-xs text-ink-500">{active.courseTitle}</p>
             </div>
             <div className="scroll-thin flex-1 space-y-2 overflow-y-auto p-4">
-              {messages.length === 0 ? (
+              {loadingThread ? (
+                <p className="text-center text-sm text-ink-500">Loading conversation…</p>
+              ) : messages.length === 0 ? (
                 <p className="text-center text-sm text-ink-500">No messages yet. Say hello!</p>
               ) : (
-                messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-xs rounded-2xl px-3 py-2 text-sm ${
-                        m.from === 'me' ? 'bg-brand-600 text-white' : 'bg-surface-muted text-ink-900'
-                      }`}
-                    >
-                      {m.text}
+                messages.map((m) => {
+                  const mine = m.senderId === user?.id;
+                  return (
+                    <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-xs rounded-2xl px-3 py-2 text-sm ${
+                          mine ? 'bg-brand-600 text-white' : 'bg-surface-muted text-ink-900'
+                        }`}
+                      >
+                        <p>{m.body}</p>
+                        <p className={`mt-1 text-[10px] ${mine ? 'text-brand-100' : 'text-ink-300'}`}>
+                          {formatRelative(m.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               <div ref={bottomRef} />
             </div>
@@ -124,11 +195,15 @@ export default function TrainerMessagesPage() {
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && send()}
+                onKeyDown={(e) => e.key === 'Enter' && !sending && send()}
                 placeholder="Write a message…"
                 className="h-10 flex-1 rounded-xl border border-ink-900/15 px-3 text-sm"
               />
-              <button onClick={send} className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white hover:bg-brand-700">
+              <button
+                onClick={send}
+                disabled={sending || !draft.trim()}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
+              >
                 <Send className="h-4 w-4" />
               </button>
             </div>

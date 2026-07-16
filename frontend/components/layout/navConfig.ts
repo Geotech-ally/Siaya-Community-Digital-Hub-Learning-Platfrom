@@ -35,14 +35,17 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: 'Learner progress', href: '/dashboard/trainer/progress', icon: LineChart },
     { label: 'Messages', href: '/dashboard/trainer/messages', icon: MessageSquare },
     { label: 'AI assistant', href: '/dashboard/trainer/ai-assistant', icon: Sparkles },
+    { label: 'Settings', href: '/dashboard/trainer/settings', icon: Settings },
   ],
   LEARNER: [
     { label: 'Overview', href: '/dashboard/learner', icon: LayoutDashboard },
     { label: 'Browse courses', href: '/dashboard/learner/courses', icon: BookOpen },
     { label: 'My progress', href: '/dashboard/learner/progress', icon: GraduationCap },
+    { label: 'Messages', href: '/dashboard/learner/messages', icon: MessageSquare },
     { label: 'Notifications', href: '/dashboard/learner/notifications', icon: Bell },
     { label: 'Certificates', href: '/dashboard/learner/certificates', icon: Award },
     { label: 'AI assistant', href: '/dashboard/learner/ai-assistant', icon: Sparkles },
+    { label: 'Settings', href: '/dashboard/learner/settings', icon: Settings },
   ],
 };
 

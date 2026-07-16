@@ -3,12 +3,14 @@ import { Role, SubmissionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAssignmentDto, SubmitAssignmentDto, GradeAssignmentDto } from './dto/assignment.dto';
 import { AuditService } from '../audit/audit.service';
+import { CertificatesService } from '../certificates/certificates.service';
 
 @Injectable()
 export class AssignmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly certificatesService: CertificatesService,
   ) {}
 
   async create(dto: CreateAssignmentDto, actorId: string, actorRole: Role) {
@@ -77,7 +79,7 @@ export class AssignmentsService {
 
   async submit(assignmentId: string, dto: SubmitAssignmentDto, learnerId: string) {
     const [assignment, existing] = await Promise.all([
-      this.prisma.assignment.findUnique({ where: { id: assignmentId }, select: { id: true, dueDate: true } }),
+      this.prisma.assignment.findUnique({ where: { id: assignmentId }, select: { id: true, courseId: true, dueDate: true } }),
       this.prisma.assignmentSubmission.findUnique({
         where: { assignmentId_learnerId: { assignmentId, learnerId } },
         select: { id: true },
@@ -103,6 +105,13 @@ export class AssignmentsService {
       entity: 'AssignmentSubmission',
       entityId: submission.id,
     });
+
+    // Auto-issue a certificate if this submission completes the course.
+    try {
+      await this.certificatesService.checkAndIssue(learnerId, assignment.courseId, learnerId);
+    } catch {
+      // Certificate issuance must not break the assignment submission response.
+    }
 
     return submission;
   }

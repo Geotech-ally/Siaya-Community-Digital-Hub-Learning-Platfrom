@@ -87,6 +87,8 @@ model User {
   role         Role     @default(LEARNER)
   isActive     Boolean  @default(true)
   refreshToken String?
+  lastActiveAt DateTime? // last time the learner accessed the site (for inactivity re-engagement)
+  reengagementSentAt DateTime? // last time an automated re-engagement message was sent
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -101,6 +103,11 @@ model User {
   progressRecords Progress[]
   certificates    Certificate[]
   notifications   Notification[]
+  messagesSent    Message[]      @relation("MessageSender")
+  messagesReceived Message[]     @relation("MessageRecipient")
+
+  // Per-user settings (one-to-one)
+  settings Settings?
 
   // Audit / creation trail
   createdByAdminId String?
@@ -111,8 +118,31 @@ model User {
 
   @@index([role])
   @@index([role, isActive])
+  @@index([lastActiveAt])
   @@index([createdByAdminId])
   @@map("users")
+}
+
+// ----------------------------------------------------------
+// USER SETTINGS (per-user portal preferences)
+// ----------------------------------------------------------
+
+model Settings {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications  Boolean  @default(true)
+  messageNotifications Boolean @default(true)
+  courseAnnouncements Boolean  @default(true)
+  publicProfile       Boolean  @default(false)
+  shareCertificates   Boolean  @default(true)
+  theme               String   @default("system") // system | light | dark
+  language            String   @default("en")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_settings")
 }
 
 // ----------------------------------------------------------
@@ -154,6 +184,7 @@ model Course {
   quizzes      Quiz[]
   assignments  Assignment[]
   certificates Certificate[]
+  messages     Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,6 +409,31 @@ model Certificate {
   @@index([learnerId])
   @@index([courseId])
   @@map("certificates")
+}
+
+// ----------------------------------------------------------
+// COURSE MESSAGING (trainer ↔ learner)
+// ----------------------------------------------------------
+
+model Message {
+  id          String    @id @default(uuid())
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([courseId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([courseId, senderId, recipientId])
+  @@index([recipientId, readAt])
+  @@index([createdAt])
+  @@map("messages")
 }
 
 // ----------------------------------------------------------

@@ -1,42 +1,16 @@
 import Link from 'next/link';
 import { PLATFORM_NAME } from '@/lib/brand';
 import { PlatformLogo } from './PlatformLogo';
-import { Facebook, Twitter, Instagram, MapPin, Phone, Mail } from 'lucide-react';
-
-const departments = [
-  'Basic ICT Skills',
-  'Design Courses',
-  'Marketing Courses',
-  'Computer Science Courses',
-  'Data Science and AI Courses',
-];
-
-const partners = [
-  'Ministry of ICT and Digital Economy',
-  'Konza Technopolis',
-  'ICT Authority',
-  'BuuPass',
-  'Kenya Films',
-  'Kenya Institute of Mass Communication',
-];
-
-const socialLinks = [
-  { label: 'Facebook', href: '#', icon: Facebook },
-  { label: 'Twitter', href: '#', icon: Twitter },
-  { label: 'Instagram', href: '#', icon: Instagram },
-];
-
-const contactDetails = [
-  { label: 'Location', value: 'Bondo Town, Siaya County, Kenya', icon: MapPin },
-  { label: 'Contact', value: '+254 754 951 128', icon: Phone },
-  { label: 'Email', value: 'info@siayacommunitydigitalhub.or.ke', icon: Mail },
-];
+import { contactDetails, departments, partners, socialLinks } from '@/constants/contact';
+import { navLinks } from './PublicNavbar';
 
 export function PublicFooter() {
+  const quickLinks = navLinks;
+
   return (
     <footer className="border-t border-white/10 bg-ink-900 text-ink-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link href="/" className="flex items-center gap-2" aria-label={`${PLATFORM_NAME} home`}>
               <PlatformLogo size="sm" />
@@ -46,6 +20,19 @@ export function PublicFooter() {
               Welcome to the Siaya Community Digital Hub Learning Platform, a transformative initiative dedicated to
               bridging the digital divide and empowering the people of Siaya, Kenya
             </p>
+
+            <ul className="mt-6 space-y-3">
+              {contactDetails.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.label} className="flex items-start gap-2.5">
+                    <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-400" aria-hidden="true" />
+                    <span className="text-sm text-ink-300">{item.value}</span>
+                  </li>
+                );
+              })}
+            </ul>
+
             <ul className="mt-6 flex items-center gap-3">
               {socialLinks.map((item) => {
                 const Icon = item.icon;
@@ -65,6 +52,22 @@ export function PublicFooter() {
           </div>
 
           <div>
+            <h3 className="font-display text-sm font-semibold text-white">Quick Links</h3>
+            <ul className="mt-4 space-y-2.5">
+              {quickLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-ink-300 transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
             <h3 className="font-display text-sm font-semibold text-white">Departments</h3>
             <ul className="mt-4 space-y-2.5">
               {departments.map((item) => (
@@ -77,31 +80,18 @@ export function PublicFooter() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-display text-sm font-semibold text-white">Contact</h3>
-            <ul className="mt-4 space-y-3">
-              {contactDetails.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.label} className="flex items-start gap-2.5">
-                    <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-400" aria-hidden="true" />
-                    <span className="text-sm text-ink-300">{item.value}</span>
+          {partners.length > 0 && (
+            <div>
+              <h3 className="font-display text-sm font-semibold text-white">Partners</h3>
+              <ul className="mt-4 space-y-2.5">
+                {partners.map((item) => (
+                  <li key={item}>
+                    <span className="text-sm text-ink-300">{item}</span>
                   </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-display text-sm font-semibold text-white">Partners</h3>
-            <ul className="mt-4 space-y-2.5">
-              {partners.map((item) => (
-                <li key={item}>
-                  <span className="text-sm text-ink-300">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-8">

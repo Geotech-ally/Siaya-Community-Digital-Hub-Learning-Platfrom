@@ -59,6 +59,15 @@ const config: Config = {
         card: '0 1px 2px rgba(15,18,41,0.04), 0 4px 16px rgba(15,18,41,0.06)',
         popover: '0 8px 30px rgba(15,18,41,0.12)',
       },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        marquee: 'marquee linear infinite',
+      },
     },
   },
   plugins: [],

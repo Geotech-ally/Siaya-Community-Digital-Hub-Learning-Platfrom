@@ -142,7 +142,11 @@ export default function LearnerOverviewPage() {
                   {Math.round(progressByCourse.get(e.courseId)?.overallPercent ?? 0)}%
                 </span>
                 <Link
-                  href={`/courses/${e.courseId}`}
+                  href={
+                    progressByCourse.get(e.courseId)?.nextLessonId
+                      ? `/courses/${e.courseId}/lessons/${progressByCourse.get(e.courseId)?.nextLessonId}`
+                      : `/courses/${e.courseId}`
+                  }
                   className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
                 >
                   Resume

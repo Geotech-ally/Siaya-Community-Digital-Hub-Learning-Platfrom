@@ -51,4 +51,19 @@ export class PublicService {
       })),
     };
   }
+
+  async courses() {
+    const published = await this.prisma.course.findMany({
+      where: { status: CourseStatus.PUBLISHED },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        department: true,
+      },
+      orderBy: { title: 'asc' },
+    });
+
+    return published;
+  }
 }

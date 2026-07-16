@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { assignmentsService } from '@/lib/services/assignments.service';
+import { useSecureAssessment } from '@/common/hooks/useSecureAssessment';
 import type { Assignment } from '@/types';
 import { formatDate } from '@/common/utils/format';
 
@@ -22,6 +23,8 @@ export default function AssignmentSubmissionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useSecureAssessment(!!assignment && !submitted);
 
   useEffect(() => {
     assignmentsService
@@ -62,6 +65,10 @@ export default function AssignmentSubmissionPage() {
         <h1 className="mt-4 font-display text-2xl font-semibold text-ink-900">{assignment.title}</h1>
         <p className="mt-1 text-sm text-ink-500">
           Due {formatDate(assignment.dueDate)} · {assignment.maxScore} points
+        </p>
+
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Assessment mode: AI assistance is hidden and copy/paste is disabled while you work on this assignment.
         </p>
 
         <Card className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-ink-700">{assignment.instructions}</Card>

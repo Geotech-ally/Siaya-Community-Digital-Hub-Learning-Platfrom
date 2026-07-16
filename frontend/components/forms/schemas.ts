@@ -38,8 +38,15 @@ export const lessonSchema = z.object({
   content: z.string().min(10, 'Add lesson content'),
   videoUrl: z.string().url('Enter a valid video URL').optional().or(z.literal('')),
   order: z.coerce.number().int().min(1),
+  moduleId: z.string().optional(),
 });
 export type LessonFormValues = z.infer<typeof lessonSchema>;
+
+export const moduleSchema = z.object({
+  title: z.string().min(3, 'Module title is required'),
+  order: z.coerce.number().int().min(1),
+});
+export type ModuleFormValues = z.infer<typeof moduleSchema>;
 
 export const assignmentSchema = z.object({
   title: z.string().min(3, 'Title is required'),

@@ -44,16 +44,75 @@ export class IntegrationsService {
     });
   }
 
-  // Placeholder for external video integration (Mux/S3) URL validation.
-  // Trainers attach video links directly; no PDF-based content is supported.
-  isValidVideoUrl(url: string): boolean {
-    try {
-      const parsed = new URL(url);
-      return ['stream.mux.com', 's3.amazonaws.com'].some((domain) =>
-        parsed.hostname.includes(domain),
-      ) || parsed.protocol === 'https:';
-    } catch {
-      return false;
+  async sendCertificateEmail(data: {
+    recipientEmail: string;
+    learnerName?: string;
+    courseTitle: string;
+    certificateNo: string;
+    verifyUrl: string;
+    message?: string;
+  }) {
+    if (!this.transporter) {
+      this.logger.warn(
+        `SMTP not configured. Skipping certificate email to ${data.recipientEmail}`,
+      );
+      return;
     }
+
+    const body = [
+      data.message ? `${data.message}\n` : '',
+      `${data.learnerName ? data.learnerName + ',' : 'Hi'},`,
+      '',
+      `Congratulations on completing "${data.courseTitle}"!`,
+      '',
+      `You can verify this certificate here: ${data.verifyUrl}`,
+      '',
+      `Certificate No: ${data.certificateNo}`,
+      '',
+      `— Siaya Community Digital Hub`,
+    ].join('\n');
+
+    await this.transporter.sendMail({
+      from: this.config.get<string>('SMTP_FROM', 'no-reply@sicodihub.ac.ke'),
+      to: data.recipientEmail,
+      subject: `Certificate of Completion — ${data.courseTitle}`,
+      text: body,
+    });
+  }
+
+  async sendCourseDripEmail(data: {
+    recipientEmail: string;
+    learnerName?: string;
+    completedCourseTitle: string;
+    recommendations: { title: string; url: string }[];
+  }) {
+    if (!this.transporter) {
+      this.logger.warn(`SMTP not configured. Skipping course drip to ${data.recipientEmail}`);
+      return;
+    }
+
+    const recs = data.recommendations.length
+      ? data.recommendations
+          .map((r, i) => `${i + 1}. ${r.title} — ${r.url}`)
+          .join('\n')
+      : 'Browse all courses in the learning portal to keep building your skills.';
+
+    const body = [
+      `${data.learnerName ? data.learnerName + ',' : 'Hi'},`,
+      '',
+      `Great work finishing "${data.completedCourseTitle}"! Keep the momentum going with another course.`,
+      '',
+      'Recommended next steps:',
+      recs,
+      '',
+      `— Siaya Community Digital Hub`,
+    ].join('\n');
+
+    await this.transporter.sendMail({
+      from: this.config.get<string>('SMTP_FROM', 'no-reply@sicodihub.ac.ke'),
+      to: data.recipientEmail,
+      subject: `Continue learning after "${data.completedCourseTitle}"`,
+      text: body,
+    });
   }
 }

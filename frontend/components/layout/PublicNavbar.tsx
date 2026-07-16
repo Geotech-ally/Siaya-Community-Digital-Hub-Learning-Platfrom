@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { PLATFORM_NAME } from '@/lib/brand';
 import { PlatformLogo } from './PlatformLogo';
 
-const navLinks = [
+export const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'About Us', href: '/about' },
   { label: 'Departments', href: '/departments' },

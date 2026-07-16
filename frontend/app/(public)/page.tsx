@@ -9,7 +9,6 @@ import {
   UserPlus,
   Layers,
   PlayCircle,
-  GraduationCap,
   LogIn,
 } from 'lucide-react';
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '@/lib/brand';
@@ -47,8 +46,8 @@ const highlights = [
 const processSteps = [
   {
     step: '01',
-    title: 'Create Account',
-    description: 'Register with your first name, last name, email address, and phone number.',
+    title: 'Create Account or Sign In',
+    description: 'Register a new learner account or sign in to continue where you left off.',
     icon: UserPlus,
   },
   {
@@ -59,15 +58,15 @@ const processSteps = [
   },
   {
     step: '03',
-    title: 'Learn at Your Pace',
-    description: 'Watch videos, read modules, complete quizzes and assignments.',
-    icon: PlayCircle,
+    title: 'Select a Course',
+    description: 'Open a course to review modules, lessons, quizzes, and assignments.',
+    icon: BookOpen,
   },
   {
     step: '04',
-    title: 'Earn Your Certificate',
-    description: 'Pass the final assessment and receive your official Hub certificate.',
-    icon: GraduationCap,
+    title: 'Start Learning',
+    description: 'Enroll, learn at your pace, and resume from your last progress point anytime.',
+    icon: PlayCircle,
   },
 ];
 
@@ -80,7 +79,6 @@ const fallbackData: PublicHomeData = {
 async function getHomeData(): Promise<PublicHomeData> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/public/home`, {
-      cache: 'force-cache',
       next: { revalidate },
     });
 
