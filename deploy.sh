@@ -34,8 +34,10 @@ npm install --strict-ssl=false
 echo ">>> Building frontend (NEXT_PUBLIC_API_URL is baked in here — ensure frontend/.env is set)..."
 npm run build
 
-echo ">>> Restarting services..."
+echo ">>> Starting/reloading services..."
 cd "$ROOT"
-pm2 reload ecosystem.config.js --update-env
+# startOrReload = start if not yet registered, zero-downtime reload if already running
+pm2 startOrReload ecosystem.config.js --update-env
+pm2 save
 
 echo ">>> Done."
