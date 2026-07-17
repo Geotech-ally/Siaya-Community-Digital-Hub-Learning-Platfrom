@@ -9,8 +9,8 @@ import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { PublicModule } from './public/public.module';
-import { UsersModule } from './storage/users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';

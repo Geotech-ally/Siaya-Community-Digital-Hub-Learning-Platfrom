@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { PLATFORM_NAME } from '@/lib/brand';
-import { PlatformLogo } from './PlatformLogo';
-import { contactDetails, departments, partners, socialLinks } from '@/constants/contact';
+import { Facebook, Twitter, Instagram, MapPin, Phone, Mail } from 'lucide-react';
+import { contactDetails, socialLinks } from '@/lib/contact';
+import { departments, partners } from '@/constants/contact';
 import { navLinks } from './PublicNavbar';
+import { PlatformLogo } from './PlatformLogo';
+
+const socialIcons = { facebook: Facebook, twitter: Twitter, instagram: Instagram };
+const contactIcons = { location: MapPin, phone: Phone, email: Mail };
 
 export function PublicFooter() {
   const quickLinks = navLinks;
@@ -23,7 +28,7 @@ export function PublicFooter() {
 
             <ul className="mt-6 space-y-3">
               {contactDetails.map((item) => {
-                const Icon = item.icon;
+                const Icon = contactIcons[item.type];
                 return (
                   <li key={item.label} className="flex items-start gap-2.5">
                     <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-400" aria-hidden="true" />
@@ -35,7 +40,7 @@ export function PublicFooter() {
 
             <ul className="mt-6 flex items-center gap-3">
               {socialLinks.map((item) => {
-                const Icon = item.icon;
+                const Icon = socialIcons[item.type];
                 return (
                   <li key={item.label}>
                     <Link

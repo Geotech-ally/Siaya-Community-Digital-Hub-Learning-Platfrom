@@ -206,13 +206,13 @@ function CreateModuleModal({
   });
 
   async function onSubmit(values: ModuleFormValues) {
-    const module = await lessonsService.createModule({
+    const createdModule = await lessonsService.createModule({
       title: values.title,
       courseId,
       order: values.order,
     });
     reset({ order: nextOrder + 1 });
-    onCreated({ ...module, lessons: [] });
+    onCreated({ ...createdModule, lessons: [] });
   }
 
   return (
