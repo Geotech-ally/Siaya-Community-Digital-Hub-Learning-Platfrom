@@ -48,7 +48,7 @@ function LoginForm() {
       />
 
       {error && (
-        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger" role="alert">
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger dark:bg-red-500/10" role="alert">
           {error}
         </p>
       )}
@@ -63,10 +63,10 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink-900">
+      <h1 className="font-display text-2xl font-semibold text-ink-900 dark:text-white">
         Welcome to the Future of Digital Learning
       </h1>
-      <p className="mt-1 text-sm text-ink-500">
+      <p className="mt-1 text-sm text-ink-500 dark:text-slate-400">
         Access your personalized learning environment. Build real-world skills.
       </p>
 
@@ -74,9 +74,9 @@ export default function LoginPage() {
         <LoginForm />
       </Suspense>
 
-      <p className="mt-6 text-center text-sm text-ink-500">
+      <p className="mt-6 text-center text-sm text-ink-500 dark:text-slate-400">
         New to {PLATFORM_NAME}?{' '}
-        <Link href="/register" className="font-medium text-brand-600 hover:underline">
+        <Link href="/register" className="font-medium text-brand-600 hover:underline dark:text-iris-300">
           Create an account
         </Link>
       </p>

@@ -35,8 +35,8 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink-900">Start Building Your Digital Future</h1>
-      <p className="mt-1 text-sm text-ink-500">Take control of your learning journey.</p>
+      <h1 className="font-display text-2xl font-semibold text-ink-900 dark:text-white">Start Building Your Digital Future</h1>
+      <p className="mt-1 text-sm text-ink-500 dark:text-slate-400">Take control of your learning journey.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-4">
         <Input label="Full name" placeholder="Jane Wafula" error={errors.fullName?.message} {...register('fullName')} />
@@ -51,7 +51,7 @@ export default function RegisterPage() {
         />
 
         {error && (
-          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger" role="alert">
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger dark:bg-red-500/10" role="alert">
             {error}
           </p>
         )}
@@ -61,9 +61,9 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-ink-500">
+      <p className="mt-6 text-center text-sm text-ink-500 dark:text-slate-400">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+        <Link href="/login" className="font-medium text-brand-600 hover:underline dark:text-iris-300">
           Sign in
         </Link>
       </p>

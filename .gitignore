@@ -19,6 +19,9 @@ frontend/.next/
 # Environment files
 .env
 .env.*
+# ...but keep the example templates
+!.env.example
+!**/.env.example
 
 # OS files
 .DS_Store
