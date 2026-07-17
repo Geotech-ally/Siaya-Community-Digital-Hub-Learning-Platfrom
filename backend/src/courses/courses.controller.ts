@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto, UpdateCourseDto, AssignTrainerDto } from './dto/course.dto';
 
@@ -18,6 +19,7 @@ export class CoursesController {
     return this.coursesService.create(dto, userId);
   }
 
+  @Public()
   @Get()
   findAll(
     @Query('status') status?: string,
@@ -27,6 +29,7 @@ export class CoursesController {
     return this.coursesService.findAll({ status, department, search });
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.coursesService.findOne(id);

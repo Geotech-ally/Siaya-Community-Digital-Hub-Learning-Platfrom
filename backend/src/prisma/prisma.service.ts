@@ -54,6 +54,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.certificate;
   }
 
+  public get message() {
+    return this.client.message;
+  }
+
+  public get settings() {
+    return this.client.settings;
+  }
+
   public get notification() {
     return this.client.notification;
   }

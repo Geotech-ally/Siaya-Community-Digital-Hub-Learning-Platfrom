@@ -1,16 +1,19 @@
 import api from '@/lib/api';
-import type { Lesson } from '@/types';
-
-interface ModuleShape {
-  id: string;
-  title: string;
-  order: number;
-  lessons: Lesson[];
-}
+import type { CourseModule, Lesson } from '@/types';
 
 export const lessonsService = {
+  listModulesByCourse: (courseId: string) =>
+    api.get<CourseModule[]>(`/courses/${courseId}/lessons`).then((r) =>
+      r.data
+        .map((module) => ({
+          ...module,
+          lessons: (module.lessons ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+        }))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    ),
+
   listByCourse: (courseId: string) =>
-    api.get<ModuleShape[]>(`/courses/${courseId}/lessons`).then((r) => {
+    api.get<CourseModule[]>(`/courses/${courseId}/lessons`).then((r) => {
       // Backend returns modules (each with nested lessons); flatten into a
       // single ordered lesson list so the UI can render and navigate them.
       return r.data
@@ -21,7 +24,10 @@ export const lessonsService = {
   get: (courseId: string, lessonId: string) =>
     api.get<Lesson>(`/courses/${courseId}/lessons/${lessonId}`).then((r) => r.data),
 
-  create: (courseId: string, payload: Partial<Lesson>) =>
+  createModule: (payload: { title: string; courseId: string; order?: number }) =>
+    api.post('/modules', payload).then((r) => r.data),
+
+  create: (courseId: string, payload: Partial<Lesson> & { moduleId?: string }) =>
     api.post<Lesson>(`/courses/${courseId}/lessons`, payload).then((r) => r.data),
 
   update: (courseId: string, lessonId: string, payload: Partial<Lesson>) =>

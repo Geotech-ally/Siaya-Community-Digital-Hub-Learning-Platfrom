@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { LessonsService } from './lessons.service';
 import { CreateModuleDto, CreateLessonDto, UpdateLessonDto } from './dto/lesson.dto';
 
@@ -54,16 +55,19 @@ export class LessonsController {
   }
 
   // All roles: view full structured content for a course (no PDFs)
+  @Public()
   @Get('courses/:courseId/content')
   findByCourse(@Param('courseId') courseId: string) {
     return this.lessonsService.findLessonsByCourse(courseId);
   }
 
+  @Public()
   @Get('courses/:courseId/lessons')
   listLessonsByCourse(@Param('courseId') courseId: string) {
     return this.lessonsService.findLessonsByCourse(courseId);
   }
 
+  @Public()
   @Get('courses/:courseId/lessons/:id')
   findOneByCourse(@Param('courseId') courseId: string, @Param('id') id: string) {
     const lesson = this.lessonsService.findLessonById(id).catch(() => {

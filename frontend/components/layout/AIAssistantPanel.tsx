@@ -14,9 +14,13 @@ interface AIMessage {
 export function AIAssistantPanel({
   title = 'AI Learning Assistant',
   placeholder = 'Ask about a lesson, concept, or how to get unstuck…',
+  courseId,
+  context,
 }: {
   title?: string;
   placeholder?: string;
+  courseId?: string;
+  context?: string;
 }) {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -37,7 +41,7 @@ export function AIAssistantPanel({
     setDraft('');
     setLoading(true);
     try {
-      const { answer } = await aiService.ask({ question });
+      const { answer } = await aiService.ask({ question, courseId, context });
       setMessages((prev) => [...prev, { id: Math.random().toString(36).slice(2), role: 'assistant', text: answer }]);
     } catch {
       setMessages((prev) => [

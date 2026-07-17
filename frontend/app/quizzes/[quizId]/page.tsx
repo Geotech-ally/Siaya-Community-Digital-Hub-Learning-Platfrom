@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { quizzesService } from '@/lib/services/quizzes.service';
+import { useSecureAssessment } from '@/common/hooks/useSecureAssessment';
 import type { Quiz, QuizAttempt } from '@/types';
 
 export default function QuizAttemptPage() {
@@ -20,6 +21,8 @@ export default function QuizAttemptPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useSecureAssessment(!!quiz && !result);
 
   useEffect(() => {
     quizzesService
@@ -114,6 +117,10 @@ export default function QuizAttemptPage() {
           )}
         </div>
         {quiz.description && <p className="mt-2 text-sm text-ink-500">{quiz.description}</p>}
+
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Assessment mode: AI assistance is hidden and copy/paste is disabled while you attempt this quiz.
+        </p>
 
         <div className="mt-6 flex flex-col gap-4">
           {quiz.questions.map((q, idx) => (

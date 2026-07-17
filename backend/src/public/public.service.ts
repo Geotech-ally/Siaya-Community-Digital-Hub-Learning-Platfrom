@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CourseStatus } from '@prisma/client';
+import { CourseStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class PublicService {
         take: 6,
       }),
       this.prisma.course.count({ where: { status: CourseStatus.PUBLISHED } }),
-      this.prisma.user.count({ where: { role: 'LEARNER', isActive: true } }),
+      this.prisma.user.count({ where: { role: Role.LEARNER, isActive: true } }),
       this.prisma.course.groupBy({
         by: ['department'],
         where: { status: CourseStatus.PUBLISHED },
@@ -50,5 +50,20 @@ export class PublicService {
         moduleCount: course._count.modules,
       })),
     };
+  }
+
+  async courses() {
+    const published = await this.prisma.course.findMany({
+      where: { status: CourseStatus.PUBLISHED },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        department: true,
+      },
+      orderBy: { title: 'asc' },
+    });
+
+    return published;
   }
 }

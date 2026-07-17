@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Video, Plus, GripVertical, Trash2, FileText, Link2 } from 'lucide-react';
+import { Video, Plus, Trash2, Link2, Layers } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,10 +13,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { lessonSchema, type LessonFormValues } from '@/components/forms/schemas';
+import { lessonSchema, moduleSchema, type LessonFormValues, type ModuleFormValues } from '@/components/forms/schemas';
 import { lessonsService } from '@/lib/services/lessons.service';
 import { coursesService } from '@/lib/services/courses.service';
-import type { Course, Lesson } from '@/types';
+import type { Course, CourseModule, Lesson } from '@/types';
 import { formatDuration } from '@/common/utils/format';
 
 function LessonsContent() {
@@ -25,9 +25,11 @@ function LessonsContent() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseId, setCourseId] = useState(initialCourseId);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createLessonOpen, setCreateLessonOpen] = useState(false);
+  const [createModuleOpen, setCreateModuleOpen] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState('');
 
   useEffect(() => {
     coursesService.list({ pageSize: 50 }).then((r) => {
@@ -41,9 +43,12 @@ function LessonsContent() {
     if (!id) return;
     setLoading(true);
     lessonsService
-      .listByCourse(id)
-      .then((data) => setLessons(data.sort((a, b) => a.order - b.order)))
-      .catch(() => setLessons([]))
+      .listModulesByCourse(id)
+      .then((data) => {
+        setModules(data);
+        if (data.length && !selectedModuleId) setSelectedModuleId(data[0].id);
+      })
+      .catch(() => setModules([]))
       .finally(() => setLoading(false));
   }
 
@@ -52,10 +57,17 @@ function LessonsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  async function remove(lessonId: string) {
+  async function removeLesson(lessonId: string) {
     await lessonsService.remove(courseId, lessonId);
-    setLessons((prev) => prev.filter((l) => l.id !== lessonId));
+    setModules((prev) =>
+      prev.map((module) => ({
+        ...module,
+        lessons: module.lessons.filter((lesson) => lesson.id !== lessonId),
+      })),
+    );
   }
+
+  const totalLessons = modules.reduce((sum, module) => sum + module.lessons.length, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -67,9 +79,14 @@ function LessonsContent() {
             </option>
           ))}
         </Select>
-        <Button onClick={() => setCreateOpen(true)} disabled={!courseId}>
-          <Plus className="h-4 w-4" /> Add lesson
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setCreateModuleOpen(true)} disabled={!courseId}>
+            <Layers className="h-4 w-4" /> Add module
+          </Button>
+          <Button onClick={() => setCreateLessonOpen(true)} disabled={!courseId || modules.length === 0}>
+            <Plus className="h-4 w-4" /> Add lesson
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -78,54 +95,94 @@ function LessonsContent() {
             <Skeleton key={i} className="h-16" />
           ))}
         </div>
-      ) : lessons.length === 0 ? (
-        <EmptyState icon={Video} title="No lessons yet" description="Add your first video or text lesson." />
+      ) : modules.length === 0 ? (
+        <EmptyState
+          icon={Layers}
+          title="No modules yet"
+          description="Create a module first, then add lessons, quizzes, and assignments within it."
+        />
       ) : (
-        <div className="flex flex-col gap-2">
-          {lessons.map((l) => (
-            <Card key={l.id} className="flex items-center gap-3">
-              <GripVertical className="h-4 w-4 shrink-0 text-ink-300" />
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                <Video className="h-4 w-4 text-brand-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-ink-900">
-                  {l.order}. {l.title}
+        <div className="flex flex-col gap-4">
+          {modules.map((module) => (
+            <Card key={module.id} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-brand-600" />
+                <p className="font-display text-sm font-semibold text-ink-900">
+                  Module {module.order}. {module.title}
                 </p>
-                <p className="truncate text-xs text-ink-500">{l.content}</p>
               </div>
-              {l.videoUrl && (
-                <div className="flex items-center gap-1 text-xs text-ink-500">
-                  <Link2 className="h-3.5 w-3.5" /> {formatDuration(l.durationSeconds)}
+
+              {module.lessons.length === 0 ? (
+                <p className="text-sm text-ink-500">No lessons in this module yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {module.lessons.map((lesson) => (
+                    <div key={lesson.id} className="flex items-center gap-3 rounded-xl border border-ink-900/8 p-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50">
+                        <Video className="h-4 w-4 text-brand-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-ink-900">
+                          {lesson.order}. {lesson.title}
+                        </p>
+                        <p className="truncate text-xs text-ink-500">{lesson.content}</p>
+                      </div>
+                      {lesson.videoUrl && (
+                        <div className="flex items-center gap-1 text-xs text-ink-500">
+                          <Link2 className="h-3.5 w-3.5" /> {formatDuration(lesson.durationSeconds)}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => removeLesson(lesson.id)}
+                        className="rounded-lg p-2 text-ink-300 hover:bg-red-50 hover:text-danger"
+                        aria-label="Delete lesson"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
-              <button
-                onClick={() => remove(l.id)}
-                className="rounded-lg p-2 text-ink-300 hover:bg-red-50 hover:text-danger"
-                aria-label="Delete lesson"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
             </Card>
           ))}
+          <p className="text-xs text-ink-500">{modules.length} modules · {totalLessons} lessons total</p>
         </div>
       )}
 
-      <CreateLessonModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
+      <CreateModuleModal
+        open={createModuleOpen}
+        onClose={() => setCreateModuleOpen(false)}
         courseId={courseId}
-        nextOrder={lessons.length + 1}
-        onCreated={(lesson) => {
-          setLessons((prev) => [...prev, lesson].sort((a, b) => a.order - b.order));
-          setCreateOpen(false);
+        nextOrder={modules.length + 1}
+        onCreated={(module) => {
+          setModules((prev) => [...prev, { ...module, lessons: [] }].sort((a, b) => a.order - b.order));
+          setSelectedModuleId(module.id);
+          setCreateModuleOpen(false);
+        }}
+      />
+
+      <CreateLessonModal
+        open={createLessonOpen}
+        onClose={() => setCreateLessonOpen(false)}
+        courseId={courseId}
+        modules={modules}
+        defaultModuleId={selectedModuleId || modules[0]?.id}
+        onCreated={(lesson, moduleId) => {
+          setModules((prev) =>
+            prev.map((module) =>
+              module.id === moduleId
+                ? { ...module, lessons: [...module.lessons, lesson].sort((a, b) => a.order - b.order) }
+                : module,
+            ),
+          );
+          setCreateLessonOpen(false);
         }}
       />
     </div>
   );
 }
 
-function CreateLessonModal({
+function CreateModuleModal({
   open,
   onClose,
   courseId,
@@ -136,8 +193,59 @@ function CreateLessonModal({
   onClose: () => void;
   courseId: string;
   nextOrder: number;
-  onCreated: (lesson: Lesson) => void;
+  onCreated: (module: CourseModule) => void;
 }) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ModuleFormValues>({
+    resolver: zodResolver(moduleSchema),
+    defaultValues: { order: nextOrder },
+  });
+
+  async function onSubmit(values: ModuleFormValues) {
+    const createdModule = await lessonsService.createModule({
+      title: values.title,
+      courseId,
+      order: values.order,
+    });
+    reset({ order: nextOrder + 1 });
+    onCreated({ ...createdModule, lessons: [] });
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Add module">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Input label="Module title" error={errors.title?.message} {...register('title')} />
+        <Input label="Order" type="number" min={1} error={errors.order?.message} {...register('order')} />
+        <Button type="submit" isLoading={isSubmitting} className="mt-2">
+          Save module
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function CreateLessonModal({
+  open,
+  onClose,
+  courseId,
+  modules,
+  defaultModuleId,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  courseId: string;
+  modules: CourseModule[];
+  defaultModuleId?: string;
+  onCreated: (lesson: Lesson, moduleId: string) => void;
+}) {
+  const selectedModule = modules.find((module) => module.id === defaultModuleId) ?? modules[0];
+  const nextOrder = (selectedModule?.lessons.length ?? 0) + 1;
+
   const {
     register,
     handleSubmit,
@@ -145,21 +253,32 @@ function CreateLessonModal({
     formState: { errors, isSubmitting },
   } = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
-    defaultValues: { order: nextOrder },
+    defaultValues: { order: nextOrder, moduleId: defaultModuleId },
   });
 
   async function onSubmit(values: LessonFormValues) {
+    const targetModuleId = values.moduleId || defaultModuleId;
+    if (!targetModuleId) return;
+
     const lesson = await lessonsService.create(courseId, {
       ...values,
+      moduleId: targetModuleId,
       videoUrl: values.videoUrl || undefined,
     });
-    reset();
-    onCreated(lesson);
+    reset({ order: nextOrder + 1, moduleId: targetModuleId });
+    onCreated(lesson, targetModuleId);
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Add lesson">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Select label="Module" error={errors.moduleId?.message} {...register('moduleId')}>
+          {modules.map((module) => (
+            <option key={module.id} value={module.id}>
+              {module.title}
+            </option>
+          ))}
+        </Select>
         <Input label="Lesson title" error={errors.title?.message} {...register('title')} />
         <Textarea
           label="Lesson content"

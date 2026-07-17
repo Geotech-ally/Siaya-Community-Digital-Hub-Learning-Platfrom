@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto, SubmitQuizDto } from './dto/quiz.dto';
 import { AuditService } from '../audit/audit.service';
+import { CertificatesService } from '../certificates/certificates.service';
 
 class UpdateQuizDto {
   title?: string;
@@ -16,6 +17,7 @@ export class QuizzesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly certificatesService: CertificatesService,
   ) {}
 
   // Trainer creates quizzes for their assigned course; Admin can for any course
@@ -138,6 +140,7 @@ export class QuizzesService {
       where: { id: quizId },
       select: {
         id: true,
+        courseId: true,
         passMark: true,
         questions: { select: { id: true, correctAnswer: true, points: true } },
       },
@@ -175,6 +178,15 @@ export class QuizzesService {
       entityId: submission.id,
       metadata: { score, passed },
     });
+
+    // Auto-issue a certificate if this submission completes the course.
+    if (passed) {
+      try {
+        await this.certificatesService.checkAndIssue(learnerId, quiz.courseId, learnerId);
+      } catch {
+        // Certificate issuance must not break the quiz submission response.
+      }
+    }
 
     return submission;
   }

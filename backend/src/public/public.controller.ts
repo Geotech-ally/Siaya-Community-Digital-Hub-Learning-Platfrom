@@ -11,4 +11,9 @@ export class PublicController {
   home() {
     return this.publicService.home();
   }
+
+  @Get('courses')
+  courses() {
+    return this.publicService.courses();
+  }
 }

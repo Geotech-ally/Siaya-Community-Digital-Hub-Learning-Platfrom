@@ -96,6 +96,15 @@ const config: Config = {
         'fade-up': 'fade-up 0.6s ease-out both',
         float: 'float 6s ease-in-out infinite',
       },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        marquee: 'marquee linear infinite',
+      },
     },
   },
   plugins: [],

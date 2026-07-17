@@ -160,15 +160,31 @@ export interface ProgressSummary {
   assignmentsSubmitted: number;
   totalAssignments: number;
   overallPercent: number;
+  completedLessonIds?: string[];
+  nextLessonId?: string | null;
+}
+
+export interface CourseModule {
+  id: string;
+  title: string;
+  order: number;
+  courseId?: string;
+  lessons: Lesson[];
 }
 
 export interface Certificate {
   id: string;
   courseId: string;
   courseTitle: string;
-  learnerId: string;
+  course?: { id: string; title: string; slug?: string };
+  learnerId?: string;
+  learnerName?: string;
+  certificateNo?: string;
   issuedAt: string;
-  certificateUrl: string;
+  fileUrl?: string | null;
+  downloadUrl?: string;
+  shareUrl?: string | null;
+  certificateUrl?: string;
 }
 
 export interface Announcement {
@@ -205,4 +221,18 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface UserSettings {
+  id: string;
+  userId: string;
+  emailNotifications: boolean;
+  messageNotifications: boolean;
+  courseAnnouncements: boolean;
+  publicProfile: boolean;
+  shareCertificates: boolean;
+  theme: string;
+  language: string;
+  createdAt: string;
+  updatedAt: string;
 }

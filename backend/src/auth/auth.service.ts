@@ -110,6 +110,11 @@ export class AuthService {
 
     const tokens = await this.issueTokens(user.id, user.role, user.email);
 
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActiveAt: new Date() },
+    });
+
     await this.auditService.log({
       actorId: user.id,
       action: 'LOGIN',
@@ -161,12 +166,12 @@ export class AuthService {
     const payload = { userId, role, email };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+      secret: this.config.get<string>('JWT_SECRET') ?? this.config.get<string>('JWT_ACCESS_SECRET'),
       expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m'),
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      secret: this.config.get<string>('JWT_SECRET') ?? this.config.get<string>('JWT_REFRESH_SECRET'),
       expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
     });
 
