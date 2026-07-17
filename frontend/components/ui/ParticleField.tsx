@@ -72,6 +72,7 @@ export function ParticleField({ className = '' }: { className?: string }) {
     }
 
     function resize() {
+      if (!canvas) return;
       const parent = canvas.parentElement;
       if (!parent) return;
       const rect = parent.getBoundingClientRect();
@@ -88,6 +89,7 @@ export function ParticleField({ className = '' }: { className?: string }) {
     }
 
     function onMove(e: PointerEvent) {
+      if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const nx = e.clientX - rect.left;
       const ny = e.clientY - rect.top;
