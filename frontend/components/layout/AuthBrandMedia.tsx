@@ -17,7 +17,7 @@ export function AuthBrandMedia() {
   return (
     <video
       key={src}
-      className="absolute inset-0 h-full w-full object-cover"
+      className="absolute inset-0 h-full w-full object-contain"
       poster="/images/hub-mark.svg"
       autoPlay
       muted

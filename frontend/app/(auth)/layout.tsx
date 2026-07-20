@@ -30,19 +30,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
 
-        <div className="relative hidden overflow-hidden bg-brand-900 dark:bg-void-900 lg:block">
+        {/* Brand panel: the HUB logo animation is a white-background reveal that
+            already carries the wordmark + tagline, so we let it stand on its own
+            (no overlaid copy to fight the video for contrast). */}
+        <div className="relative hidden overflow-hidden bg-white lg:block lg:border-l lg:border-ink-900/10">
           <AuthBrandMedia />
-          {/* readability overlay so the white copy stays legible over the video */}
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/25 to-brand-950/5 dark:from-void-950/90 dark:via-void-950/35" />
-          <div className="relative flex h-full flex-col justify-end p-14 pt-24">
-            <p className="font-display text-3xl font-semibold leading-tight text-white">
-              Learn something new.<br />Teach what you know.<br />Track it all in one place.
-            </p>
-            <p className="mt-4 max-w-md text-sm text-brand-200 dark:text-iris-300">
-              Courses across ICT, design, marketing, computer science, and data &amp; AI,
-              with quizzes, assignments, and certificates built in.
-            </p>
-          </div>
         </div>
       </div>
     </PublicThemeProvider>
