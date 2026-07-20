@@ -8,7 +8,7 @@ export default function TrainerAIAssistantPage() {
     <ComingSoonPanel
       icon={Sparkles}
       title="AI Teaching Assistant"
-      description="Draft lesson ideas, quiz questions, and feedback with AI assistance. We're wiring this up to a real AI model — check back soon."
+      description="Draft lesson ideas, quiz questions, and feedback with AI assistance. We're wiring this up to a real AI model, so check back soon."
     />
   );
 }

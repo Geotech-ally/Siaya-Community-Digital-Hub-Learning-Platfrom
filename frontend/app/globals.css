@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Refined system stacks — no external font dependency, crisp on all platforms */
+  /* Refined system stacks: no external font dependency, crisp on all platforms */
   --font-display: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
   --font-mono: 'Cascadia Code', 'SF Mono', 'Consolas', ui-monospace, monospace;
@@ -34,7 +34,7 @@ body {
     background-image: linear-gradient(120deg, theme('colors.brand.700'), theme('colors.brand.500') 55%, theme('colors.accent.500'));
   }
 
-  /* Premium background mesh — subtle, layered radial glows */
+  /* Premium background mesh: subtle, layered radial glows */
   .bg-mesh {
     background-image:
       radial-gradient(60rem 60rem at 10% -10%, rgba(91, 95, 239, 0.12), transparent 55%),

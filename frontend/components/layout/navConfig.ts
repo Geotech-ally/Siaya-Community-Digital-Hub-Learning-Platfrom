@@ -10,7 +10,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
-  /** Feature is planned but not yet implemented — rendered disabled with a "Soon" badge. */
+  /** Feature is planned but not yet implemented, rendered disabled with a "Soon" badge. */
   comingSoon?: boolean;
 }
 

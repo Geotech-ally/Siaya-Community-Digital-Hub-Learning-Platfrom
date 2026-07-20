@@ -4,7 +4,7 @@ import { contactDetails, contactLocation, departments, socialLinks } from '@/con
 import { ContactForm } from '@/components/forms/ContactForm';
 
 export const metadata = {
-  title: `Contact Us — ${PLATFORM_NAME}`,
+  title: `Contact Us · ${PLATFORM_NAME}`,
   description: 'Get in touch with the Siaya Community Digital Hub Learning Platform team.',
 };
 
@@ -102,7 +102,7 @@ export default function ContactPage() {
                 <MapPin className="mx-auto h-10 w-10 text-ink-300" aria-hidden="true" />
                 <p className="mt-2 text-sm font-medium text-ink-500">{contactLocation}</p>
                 <p className="text-xs text-ink-300">
-                  Map embed placeholder — connect a map provider to display an interactive map.
+                  Map embed placeholder. Connect a map provider to display an interactive map.
                 </p>
               </div>
             </div>

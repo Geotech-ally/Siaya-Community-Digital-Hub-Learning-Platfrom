@@ -89,7 +89,7 @@ export default function QuizAttemptPage() {
           {result.passed ? 'Great work!' : 'Not quite there yet'}
         </h1>
         <p className="mt-2 text-ink-500">
-          You scored {Math.round(result.scorePercent)}% — passing score is {quiz.passingScorePercent}%.
+          You scored {Math.round(result.scorePercent)}%. The passing score is {quiz.passingScorePercent}%.
         </p>
         <Button onClick={() => router.back()} className="mt-6">
           Back to course

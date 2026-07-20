@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               Learn something new.<br />Teach what you know.<br />Track it all in one place.
             </p>
             <p className="mt-4 max-w-md text-sm text-brand-200 dark:text-iris-300">
-              Courses across ICT, design, marketing, computer science, and data &amp; AI —
+              Courses across ICT, design, marketing, computer science, and data &amp; AI,
               with quizzes, assignments, and certificates built in.
             </p>
           </div>

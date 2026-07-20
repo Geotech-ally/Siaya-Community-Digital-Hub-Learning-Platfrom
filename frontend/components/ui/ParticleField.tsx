@@ -14,7 +14,7 @@ interface Dot {
 }
 
 /**
- * Particles arranged on an invisible, tilted dome — a jellyfish bell. You only
+ * Particles arranged on an invisible, tilted dome, like a jellyfish bell. You only
  * see the dots, concentrated along the rim arc. The bell pulses gently in
  * unison at rest; moving the cursor injects energy so a wave travels across the
  * whole bell, and the dome parallaxes toward the pointer. Pure canvas 2D,
@@ -38,7 +38,7 @@ export function ParticleField({ className = '' }: { className?: string }) {
     let cx = 0;
     let cyBase = 0;
     let R = 0;
-    const TILT = 1.12; // radians — how far we look "down" onto the bell
+    const TILT = 1.12; // radians: how far we look "down" onto the bell
 
     // Pointer state
     const ptr = { x: 0, y: 0, tx: 0, ty: 0, lx: -9999, ly: -9999 };
@@ -118,7 +118,7 @@ export function ParticleField({ className = '' }: { className?: string }) {
     let prevDomeX = 0;
     let prevDomeY = 0;
     // Wave phase is integrated per frame (phase += speed * dt) rather than
-    // computed as t * speed — otherwise any change in speed multiplies against
+    // computed as t * speed, otherwise any change in speed multiplies against
     // a large t and snaps every particle to a new point on the wave.
     let wavePhase = 0;
     let smoothAmp = 0.035;

@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Core brand — deep indigo/navy for authority, amber accent for progress & achievement
+        // Core brand: deep indigo/navy for authority, amber accent for progress & achievement
         brand: {
           50: '#eef2ff',
           100: '#e0e7ff',

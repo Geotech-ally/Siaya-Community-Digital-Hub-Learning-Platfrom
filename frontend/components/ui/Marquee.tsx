@@ -42,7 +42,7 @@ export function MarqueeContent() {
         •
       </span>
       <span className="text-sm text-brand-200 sm:text-base">
-        Courses across ICT, design, marketing, computer science, and data &amp; AI — with quizzes, assignments, and
+        Courses across ICT, design, marketing, computer science, and data &amp; AI, with quizzes, assignments, and
         certificates built in.
       </span>
     </>

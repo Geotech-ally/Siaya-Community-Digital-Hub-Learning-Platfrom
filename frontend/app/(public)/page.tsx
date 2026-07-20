@@ -117,7 +117,7 @@ export default async function HomePage() {
               Experience liftoff in your digital career
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-ink-500 dark:text-slate-400">
-              {PLATFORM_SHORT_NAME} — mentor-led courses in ICT, design, marketing, data and AI, with quizzes, assignments, and certificates. {PLATFORM_TAGLINE}
+              {PLATFORM_SHORT_NAME} brings you mentor-led courses in ICT, design, marketing, data and AI, with quizzes, assignments, and certificates that prove what you have learned. {PLATFORM_TAGLINE}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -166,7 +166,7 @@ export default async function HomePage() {
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink-900 dark:text-white sm:text-4xl">
               Start learning in four steps
             </h2>
-            <p className="mt-3 text-base text-ink-500 dark:text-slate-400">From sign-up to certificate — a clear path the whole way.</p>
+            <p className="mt-3 text-base text-ink-500 dark:text-slate-400">A clear path the whole way, from sign-up to certificate.</p>
           </div>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -238,7 +238,7 @@ export default async function HomePage() {
             <div className="relative">
               <h2 className="max-w-2xl font-display text-3xl font-bold text-white sm:text-4xl">Everything you need to learn and grow</h2>
               <p className="mt-3 max-w-2xl text-white/80">
-                From foundational ICT skills to advanced data and AI courses — track progress, submit assignments, pass quizzes, and earn certificates.
+                From your first ICT lesson to advanced data and AI courses, you can track your progress, submit assignments, pass quizzes, and earn certificates along the way.
               </p>
               <ul className="mt-8 grid gap-3 sm:grid-cols-2">
                 {highlights.map((item) => (

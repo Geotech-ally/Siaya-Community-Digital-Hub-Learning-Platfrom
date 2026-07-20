@@ -5,7 +5,7 @@ import { fetchPublicCourses } from '@/lib/services/public.service';
 import { ChevronRight } from 'lucide-react';
 
 export const metadata = {
-  title: `Departments — ${PLATFORM_NAME}`,
+  title: `Departments · ${PLATFORM_NAME}`,
   description: 'Explore our departments and the courses available across ICT, design, marketing, computer science, and data & AI.',
 };
 

@@ -5,9 +5,9 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: PLATFORM_NAME,
-  description: 'Siaya Community Digital Hub Learning Platform — course delivery, quizzes, assignments, and progress tracking.',
+  description: 'Siaya Community Digital Hub Learning Platform for course delivery, quizzes, assignments, and progress tracking.',
   manifest: '/manifest.json',
-  icons: { icon: '/images/hub-logo.jpeg', apple: '/images/hub-logo.jpeg' },
+  icons: { icon: '/images/hub-mark.svg', apple: '/images/hub-mark.svg' },
 };
 
 export const viewport: Viewport = {

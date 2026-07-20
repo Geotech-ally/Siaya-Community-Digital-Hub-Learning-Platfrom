@@ -64,12 +64,12 @@ export default function LearnerOverviewPage() {
           <div className="rounded-xl bg-white/10 px-4 py-3">
             <p className="text-xs text-brand-200">Courses in progress</p>
             <p className="font-display text-xl font-semibold">
-              {loading ? '—' : enrollments.filter((e) => e.status === 'ACTIVE').length}
+              {loading ? '…' : enrollments.filter((e) => e.status === 'ACTIVE').length}
             </p>
           </div>
           <div className="rounded-xl bg-white/10 px-4 py-3">
             <p className="text-xs text-brand-200">Certificates</p>
-            <p className="font-display text-xl font-semibold">{loading ? '—' : certificates.length}</p>
+            <p className="font-display text-xl font-semibold">{loading ? '…' : certificates.length}</p>
           </div>
         </div>
       </section>
@@ -81,7 +81,7 @@ export default function LearnerOverviewPage() {
           </div>
           <div>
             <p className="text-xs font-medium text-ink-500">Enrolled courses</p>
-            <p className="font-display text-xl font-semibold text-ink-900">{loading ? '—' : enrollments.length}</p>
+            <p className="font-display text-xl font-semibold text-ink-900">{loading ? '…' : enrollments.length}</p>
           </div>
         </Card>
         <Card className="flex items-center gap-4">
@@ -91,7 +91,7 @@ export default function LearnerOverviewPage() {
           <div>
             <p className="text-xs font-medium text-ink-500">Courses completed</p>
             <p className="font-display text-xl font-semibold text-ink-900">
-              {loading ? '—' : enrollments.filter((e) => e.status === 'COMPLETED').length}
+              {loading ? '…' : enrollments.filter((e) => e.status === 'COMPLETED').length}
             </p>
           </div>
         </Card>
@@ -101,7 +101,7 @@ export default function LearnerOverviewPage() {
           </div>
           <div>
             <p className="text-xs font-medium text-ink-500">Certificates earned</p>
-            <p className="font-display text-xl font-semibold text-ink-900">{loading ? '—' : certificates.length}</p>
+            <p className="font-display text-xl font-semibold text-ink-900">{loading ? '…' : certificates.length}</p>
           </div>
         </Card>
       </div>
