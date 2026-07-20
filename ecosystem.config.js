@@ -10,19 +10,25 @@ module.exports = {
   apps: [
     {
       name: 'siaya-api',
-      script: 'dist/main.js',
+      // nest build keeps the src/ prefix because prisma/ and lib/ sit outside
+      // src/, so the entry is dist/src/main.js (NOT dist/main.js).
+      script: 'dist/src/main.js',
       cwd: '/opt/siaya-lms/backend',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       env: { NODE_ENV: 'production', PORT: 5000 },
     },
     {
       name: 'siaya-web',
+      // Next's `next start` must run in fork mode — PM2 cluster mode makes it
+      // crash-loop instantly with no output.
       script: 'node_modules/.bin/next',
       args: 'start',
       cwd: '/opt/siaya-lms/frontend',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       env: { NODE_ENV: 'production', PORT: 3100 },
